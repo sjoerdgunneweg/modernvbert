@@ -22,5 +22,5 @@ git clone git@github.com:paultltc/mteb-vlm.git
 cd mteb-vlm
 git switch vbert
 pip install -e .  #-e is important as otherwise you get a can't find package error due to a missing __init__.py file in a subdirectory -_-
-pip instal dacite
+pip install dacite
 ```
