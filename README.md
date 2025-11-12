@@ -18,5 +18,8 @@ pip install flash-attn --no-build-isolation
 Evaluation uses the vbert branch from mteb. Use the following command to install mteb:
 
 ```bash
-pip install git+ssh://git@github.com/paultltc/mteb-vlm.git@vbert
+git clone git@github.com:paultltc/mteb-vlm.git
+cd mteb-vlm
+git switch vbert
+pip install .
 ```
