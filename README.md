@@ -12,3 +12,11 @@ pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https
 pip install -e .
 pip install flash-attn --no-build-isolation
 ```
+
+### Eval
+
+Evaluation uses the vbert branch from mteb. Use the following command to install mteb:
+
+```bash
+pip install git+ssh://git@github.com/paultltc/mteb-vlm.git@vbert
+```
