@@ -5,11 +5,26 @@
 Create and activate the Conda environment:
 
 ```bash
+# Snellius specific part--------------
+# Allows for conda use and activates CUDA 12.8
+module purge
+module load 2025
+module load Anaconda3/2025.06-1
+module load CUDA/12.8.0
+#-------------------------------------
+
+conda create -n modernvbert python==3.12.0
+conda activate modernvbert
+# source activate modernvbert # for snellius
+
+# installing torch:
+pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
+
+# cd into this repo and install the copali-engine in the following way:
 cd modernvbert
-conda create -n modernvbert python==3.11
-source activate modernvbert
-pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu124
-pip install -e . # installing copali-engine
+pip install -e .
+
+# install flash attention:
 pip install flash-attn --no-build-isolation
 ```
 
