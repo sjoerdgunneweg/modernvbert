@@ -22,7 +22,7 @@ pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https
 
 # cd into this repo and install the copali-engine in the following way:
 cd modernvbert
-pip install -e .
+pip install -e colpali
 
 # install flash attention:
 pip install flash-attn --no-build-isolation
