@@ -1,2 +1,0 @@
-from .modeling_colmodernvbert import ColModernVBert
-from .processing_colmodernvbert import ColModernVBertProcessor

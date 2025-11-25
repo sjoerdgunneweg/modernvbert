@@ -1,12 +1,10 @@
 import os
-
 from pathlib import Path
 from colpali_engine.utils.gpu_stats import print_summary
 import argparse
-
 from loaders import *
 from config import load_config
-
+from accelerate import Accelerator
 import logging
 
 SMOLVLM_PROCESSOR_CONFIG_PATH = Path("/lustre/fswork/projects/rech/nwd/uyn61im/visual_encoder/assets/default_config/processor_config.json")
@@ -32,16 +30,20 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    accelerator = Accelerator()
     args = parse_args()
 
     cfg = load_config(args.config_file)
 
+    if accelerator.is_main_process:
+        print("Loaded configuration:")
+        print(cfg)
+         
     if os.path.exists(f"{cfg.tr_args.output_dir}/final"):
         print(f"Output directory {cfg.tr_args.output_dir}/final already exists. Please remove it or choose a different output directory.")
         return
 
     trainer = cfg.build_trainer()
-
     result = trainer.train()
     print_summary(result)
 

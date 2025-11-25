@@ -9,8 +9,9 @@ from typing import Any, Union, List
 from datasets import load_dataset
 from colpali_engine.data import Corpus, ColPaliEngineDataset as T2IColPaliEngineDataset
 
-MMEB_CORPUS_PATH = "/lustre/fsn1/projects/rech/nwd/uyn61im/hf_home/hub/datasets--TIGER-Lab--MMEB-train/snapshots/76dd0a440b6d4c02776830a804443fffbb2d0bfa"
-COCO_IMAGE_PATH = "/lustre/fsn1/projects/rech/nwd/uyn61im/hf_home/hub/coco/images/"
+# MMEB_CORPUS_PATH = "/lustre/fsn1/projects/rech/nwd/uyn61im/hf_home/hub/datasets--TIGER-Lab--MMEB-train/snapshots/76dd0a440b6d4c02776830a804443fffbb2d0bfa"
+MMEB_CORPUS_PATH = "TIGER-Lab/MMEB-train"
+# COCO_IMAGE_PATH = "/lustre/fsn1/projects/rech/nwd/uyn61im/hf_home/hub/coco/images/"
 COLPALI_SUBSETS = [
         "tatdqa",
         "pdf",
@@ -19,11 +20,11 @@ COLPALI_SUBSETS = [
         "Infographic_VQA"
     ]
 
-IMAGENET_LABELS = Path("/lustre/fswork/projects/rech/nwd/uyn61im/repos/mteb-vlm/mteb/tasks/Image/ZeroShotClassification/eng/templates/Imagenet1k_labels.txt").read_text().splitlines()
+# IMAGENET_LABELS = Path("/lustre/fswork/projects/rech/nwd/uyn61im/repos/mteb-vlm/mteb/tasks/Image/ZeroShotClassification/eng/templates/Imagenet1k_labels.txt").read_text().splitlines()
 
-dataset_labels = {
-    "imagenet": IMAGENET_LABELS
-}
+# dataset_labels = {
+#     "imagenet": IMAGENET_LABELS
+# }
 
 
 class LocalCorpus:
@@ -125,19 +126,18 @@ def load_mmeb_subset(
 
 def load_colpali_train_set(
         dataset_name_or_path, 
-        num_negs=0,
+        num_negs=2,
         **kwargs
     ) -> T2IColPaliEngineDataset:
     """Returns the query dataset, then the anchor dataset with the documents, then the dataset type"""
+    print("Loading ColPali train set...")
     corpus_data = load_dataset("manu/colpali-corpus", split="train")
     corpus = Corpus(corpus_data=corpus_data, doc_column_name="image")
 
     dataset_list = []
-    dataset = load_dataset(dataset_name_or_path, **kwargs)
+    dataset = load_dataset(dataset_name_or_path, split="train")
 
-    # filter to keep only the number of negatives
-    if num_negs > 0:
-        dataset = dataset.map(lambda x: {"negative_passages": x["negative_passages"][:num_negs]})
+    dataset = dataset.map(lambda x: {"negative_passages": x["negative_passages"][:1]})
 
     train_dataset = T2IColPaliEngineDataset(
         data=dataset,
@@ -177,68 +177,68 @@ def load_colpali_train_set_source(
 
     return dataset_list
 
-def load_imagenet_train_set(
-    dataset_name_or_path, 
-) -> I2TColPaliEngineDataset:
-    dataset = load_dataset(dataset_name_or_path, split="train").shuffle().take(100_000)
-    labels = dataset_labels["imagenet"]
-    dataset = dataset.map(
-        lambda x: {
-            "label": labels[int(x["cls"])],
-        },
-        num_proc=16,
-        remove_columns=["cls"]
-    )
-    train_dataset = I2TColPaliEngineDataset(
-        data=dataset,
-        query_column_name="jpg",
-        pos_target_column_name="label",
-    )
-    return [train_dataset]
+# def load_imagenet_train_set(
+#     dataset_name_or_path, 
+# ) -> I2TColPaliEngineDataset:
+#     dataset = load_dataset(dataset_name_or_path, split="train").shuffle().take(100_000)
+#     labels = dataset_labels["imagenet"]
+#     dataset = dataset.map(
+#         lambda x: {
+#             "label": labels[int(x["cls"])],
+#         },
+#         num_proc=16,
+#         remove_columns=["cls"]
+#     )
+#     train_dataset = I2TColPaliEngineDataset(
+#         data=dataset,
+#         query_column_name="jpg",
+#         pos_target_column_name="label",
+#     )
+#     return [train_dataset]
 
-def load_coco_train_set_i2t(
-    dataset_name_or_path, 
-    **kwargs
-) -> I2TColPaliEngineDataset:
-    dataset = load_dataset(dataset_name_or_path, **kwargs)
-    corpus = LocalCorpus(COCO_IMAGE_PATH)
+# def load_coco_train_set_i2t(
+#     dataset_name_or_path, 
+#     **kwargs
+# ) -> I2TColPaliEngineDataset:
+#     dataset = load_dataset(dataset_name_or_path, **kwargs)
+#     corpus = LocalCorpus(COCO_IMAGE_PATH)
 
-    dataset = dataset.map(
-        lambda x: {
-            "path": "/".join(x["url"].split("/")[-2:]),
-        },
-        remove_columns=["url"]
-    )
+#     dataset = dataset.map(
+#         lambda x: {
+#             "path": "/".join(x["url"].split("/")[-2:]),
+#         },
+#         remove_columns=["url"]
+#     )
 
-    train_dataset = I2TColPaliEngineDataset(
-        data=dataset,
-        corpus=corpus,
-        query_column_name="path",
-        pos_target_column_name="caption",
-    )
-    return [train_dataset]
+#     train_dataset = I2TColPaliEngineDataset(
+#         data=dataset,
+#         corpus=corpus,
+#         query_column_name="path",
+#         pos_target_column_name="caption",
+#     )
+#     return [train_dataset]
 
-def load_coco_train_set_t2i(
-    dataset_name_or_path, 
-    **kwargs
-) -> T2IColPaliEngineDataset:
-    dataset = load_dataset(dataset_name_or_path, **kwargs)
-    corpus = LocalCorpus(COCO_IMAGE_PATH)
+# def load_coco_train_set_t2i(
+#     dataset_name_or_path, 
+#     **kwargs
+# ) -> T2IColPaliEngineDataset:
+#     dataset = load_dataset(dataset_name_or_path, **kwargs)
+#     corpus = LocalCorpus(COCO_IMAGE_PATH)
 
-    dataset = dataset.map(
-        lambda x: {
-            "path": "/".join(x["url"].split("/")[-2:]),
-        },
-        remove_columns=["url"]
-    )
+#     dataset = dataset.map(
+#         lambda x: {
+#             "path": "/".join(x["url"].split("/")[-2:]),
+#         },
+#         remove_columns=["url"]
+#     )
 
-    train_dataset = T2IColPaliEngineDataset(
-        data=dataset,
-        corpus=corpus,
-        query_column_name="caption",
-        pos_target_column_name="path",
-    )
-    return [train_dataset]
+#     train_dataset = T2IColPaliEngineDataset(
+#         data=dataset,
+#         corpus=corpus,
+#         query_column_name="caption",
+#         pos_target_column_name="path",
+#     )
+#     return [train_dataset]
 
 # ---------------------------- NATCAP ----------------------------
 
@@ -285,13 +285,16 @@ def load_rlhn_100K(
     """
     # Load the dataset
     dataset = load_dataset(dataset_name_or_path, split="train")
+
+    # dataset = dataset.map(lambda x: {"negative_passages": x["negative_passages"][:2]})
+
     dataset = dataset.map(lambda x: {"positive_passages": [p["text"] for p in x["positive_passages"]]})
-    dataset = dataset.map(lambda x: {"negative_passages": [p["text"] for p in x["negative_passages"]]})
+    dataset = dataset.map(lambda x: {"negative_passages": [p["text"] for p in x["negative_passages"]][:2]})
     # Create the T2IColPaliEngineDataset
     train_dataset = T2IColPaliEngineDataset(
         data=dataset,
         query_column_name="query",
         pos_target_column_name="positive_passages",
-        # neg_target_column_name="negative_passages",
+        neg_target_column_name="negative_passages",
     )
     return [train_dataset]

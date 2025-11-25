@@ -1,5 +1,5 @@
 model_args:
-  model_name_or_path: /linkhome/rech/genrce01/unj98sd/visual_encoder/models/flagship_postrainings/colmodernvbert-base
+  model_name_or_path: ModernVBERT/modernvbert
   model_type: ColModernVBert
   loss_type: ColbertLoss
   loading_kwargs:
@@ -7,16 +7,17 @@ model_args:
     torch_dtype: bfloat16
     trust_remote_code: true
 train_dataset_args:
-- dataset_name_or_path: /linkhome/rech/genrce01/unj98sd/visual_encoder/data_dir/nomic-colpali-queries
+- dataset_name_or_path: vidore/colpali_train_set
   loading_kwargs:
-    mode: manu
-- dataset_name_or_path: /linkhome/rech/genrce01/unj98sd/visual_encoder/data_dir/rlhn
+    subsets:
+    - train
+- dataset_name_or_path: rlhn/rlhn-680K
   loading_kwargs:
     num_samples: 300000
     subsets:
     - train
 tr_args:
-  output_dir: /lustre/fsn1/projects/rech/nwd/unj98sd/models/flagship_postrainings/colmodernvbert_text_300k
+  output_dir: models/colmodernvbert_text_300k
   num_train_epochs: 3
   per_device_train_batch_size: 16
   per_device_eval_batch_size: 64
@@ -49,22 +50,6 @@ eval_config:
   tasks:
   - ViDoRe(v1)
   - ViDoRe(v2)
-  # - MSCOCOT2IRetrieval
-  # - MSCOCOI2TRetrieval
-  # - Flickr30kT2IRetrieval
-  # - Flickr30kI2TRetrieval
-  # - Caltech101
-  # - Caltech101ZeroShot
-  # - DTD
-  # - DTDZeroShot
-  # - FER2013
-  # - FER2013ZeroShot
-  # - EuroSAT
-  # - EuroSATZeroShot
-  # - OxfordFlowersClassification
-  # - OxfordPets
-  # - StanfordCars
-  # - Food101Classification
   batch_size: 32
-  output_folder: /linkhome/rech/genrce01/unj98sd/visual_encoder/posttraining/flagship/document_spec/results
+  output_folder: results
   encode_kwargs: {}

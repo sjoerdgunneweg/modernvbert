@@ -1,20 +1,13 @@
 import torch
 from transformers import TrainingArguments, EarlyStoppingCallback
-
 from peft import LoraConfig, get_peft_model
-
 from typing import Any, Union, List, Literal, Dict
-
 from dataclasses import dataclass, field
-
 from datasets import load_dataset
-
 from pathlib import Path
-
 import mteb
 import yaml
 from dacite import from_dict, Config
-
 from colpali_engine import loss as colpali_losses
 from colpali_engine import models as colpali_models
 from colpali_engine.data import ColPaliEngineDataset
@@ -33,7 +26,7 @@ class DatasetArgs:
         return self.loading_kwargs.get("num_negs", 0) > 0
 
     def load_data(self):
-        if "manu/colpali" in self.dataset_name_or_path.lower():
+        if "manu/colpali-queries" in self.dataset_name_or_path.lower():
             dataset = load_colpali_train_set(self.dataset_name_or_path, **self.loading_kwargs)
         elif "imagenet" in self.dataset_name_or_path.lower():
             dataset = load_imagenet_train_set(self.dataset_name_or_path, **self.loading_kwargs)
@@ -49,6 +42,8 @@ class DatasetArgs:
             dataset = load_natcap_train_set(self.dataset_name_or_path, **self.loading_kwargs)
         elif "rlhn" in self.dataset_name_or_path.lower():
             dataset = load_rlhn_100K(self.dataset_name_or_path, **self.loading_kwargs)
+        elif "vidore/colpali_train_set" in self.dataset_name_or_path.lower():
+            dataset = load_dataset(self.dataset_name_or_path, split="train")
         else:
             dataset = load_dataset(self.dataset_name_or_path, **self.loading_kwargs)
             dataset = [ColPaliEngineDataset(dataset, query_column_name="query", pos_target_column_name="image")]
@@ -73,7 +68,12 @@ class ModelArgs:
             return self.model_type + "Processor"
 
     def load_model(self, resume_path=None):
+        print(f"Loading model {self.model_name_or_path} of type {self.model_type}...")
+        print("loading ", colpali_models)
+
         model_class = getattr(colpali_models, self.model_type)
+        print("model_class ", model_class)
+
         torch_dtype = getattr(torch, self.loading_kwargs.pop("torch_dtype", "bfloat16"))
         device = self.loading_kwargs.pop("device", "cuda" if torch.cuda.is_available() else "cpu")
         return model_class.from_pretrained(

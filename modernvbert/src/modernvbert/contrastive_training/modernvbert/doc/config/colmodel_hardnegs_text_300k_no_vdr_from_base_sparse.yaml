@@ -1,7 +1,7 @@
 model_args:
   model_name_or_path: ModernVBERT/modernvbert
-  model_type: ColModernVBert
-  loss_type: ColbertNegativeCELoss
+  model_type: ColModernVBertSparse
+  loss_type: SparseBiNegativeCELoss
   loading_kwargs:
     attn_implementation: flash_attention_2
     torch_dtype: bfloat16
@@ -11,13 +11,14 @@ train_dataset_args:
   loading_kwargs:
     num_negs: 1
 - dataset_name_or_path: rlhn/rlhn-100K
+
 tr_args:
   bf16: true
-  output_dir: models/colmodernvbert_hardnegs_text_300k_from_base2
+  output_dir: models/colmodernvbert_hardnegs_text_300k_from_base_sparse
   num_train_epochs: 3
-  per_device_train_batch_size: 16
+  per_device_train_batch_size: 8
   per_device_eval_batch_size: 8
-  gradient_accumulation_steps: 1
+  gradient_accumulation_steps: 4
   gradient_checkpointing: false
   gradient_checkpointing_kwargs:
     use_reentrant: false
@@ -29,10 +30,9 @@ tr_args:
   logging_steps: 10
   warmup_ratio: 0.1
   learning_rate: 0.0002
-  run_name: colmodernvbert_hardnegs_text_300k_from_base2
+  run_name: colmodernvbert_hardnegs_text_300k_from_base_sparse
   report_to: wandb
   use_symmetric_loss: false # No symmetric loss with hard negatives
-  # resume_from_checkpoint: /var/scratch/jqiao/modernvbert/models/colmodernvbert_hardnegs_text_300k_from_base/checkpoint-1000
 lora_config:
   r: 32
   lora_alpha: 32

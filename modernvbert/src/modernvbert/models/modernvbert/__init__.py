@@ -1,2 +1,2 @@
-from .modeling_modernvbert import ModernVBertForMaskedLM, ModernVBertModel, ModernVBertPreTrainedModel
-from .configuration_modernvbert import ModernVBertConfig, ModernVBertTextConfig, ModernVBertVisionConfig
+from .bivbert import BiModernVBert, BiModernVBertProcessor
+from .colvbert import ColModernVBert, ColModernVBertProcessor
