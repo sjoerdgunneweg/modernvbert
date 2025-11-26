@@ -35,7 +35,7 @@ class Regularizer(nn.Module):
         Current effective weight, evolves from 0 to weight_T over T steps.
     """
 
-    def __init__(self, weight: float = 0.001, T: int = 50000) -> None:
+    def __init__(self, weight: float = 0.1, T: int = 10000) -> None:
         """
         Initialize regularizer with warmup schedule.
 
@@ -72,23 +72,15 @@ class Regularizer(nn.Module):
         """
         raise NotImplementedError("This is an abstract regularizer only.")
 
-
 class FLOPs(Regularizer):
-    """
-    SPLADE-style FLOPs regularizer (original SPLADE 2021).
-
-    Paper: https://arxiv.org/abs/2104.05665
-
-    Applies softplus to the representations and sums across dimensions.
-    Encourages sparsity by penalizing the overall magnitude / activity.
-
-    Input:
-        reps: Tensor of shape [B, D]
-    """
-
     def forward(self, reps: torch.Tensor) -> torch.Tensor:
         # softplus(reps) is like a smooth ReLU; summing gives an "activation mass" per example, then we mean over batch and scale by warmup weight.
         return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
+
+class L1(Regularizer):
+    def forward(self, reps: torch.Tensor) -> torch.Tensor:
+        l1 = reps.sum(dim=-1).mean()
+        return l1 * self.weight_t 
 
 class SparseBiEncoderModule(nn.Module):
     """
@@ -204,8 +196,8 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
         self.ce_loss = CrossEntropyLoss()
 
         # Avoid using nn.Module instances as default args: create them here if None.
-        self.q_regularizer = q_regularizer or FLOPs(weight=0.0001, T=100000)
-        self.d_regularizer = d_regularizer or FLOPs(weight=0.0001, T=100000)
+        self.q_regularizer = q_regularizer or L1(weight=0.1, T=10000) 
+        self.d_regularizer = d_regularizer or L1(weight=0.01, T=10000) 
 
     def forward(self, query_embeddings: torch.Tensor, doc_embeddings: torch.Tensor, offset: int = 0) -> torch.Tensor:
         """
@@ -276,8 +268,8 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         self.debug = debug
 
         # Avoid module instances as default args; create them per-loss instance.
-        self.q_regularizer = q_regularizer or FLOPs(weight=0.0001, T=100000)
-        self.d_regularizer = d_regularizer or FLOPs(weight=0.0001, T=100000)
+        self.q_regularizer = q_regularizer or L1(weight=0.1, T=10000)
+        self.d_regularizer = d_regularizer or L1(weight=0.01, T=10000)
 
         self.in_batch_loss_fn = SparseBiEncoderLoss(
             temperature=temperature,
@@ -310,11 +302,11 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
                 "loss": total loss (contrastive + regularization) [scalar tensor]
                 "contrastive_loss": hard_neg + in-batch mixture [scalar tensor]
         """
-        B, N, D = neg_doc_embeddings.shape
 
-        # === Hard negative loss ===
-        pos_scores = (query_embeddings * doc_embeddings).sum(dim=-1) / self.temperature  # [B]
-        neg_scores = torch.einsum("bd,bnd->bn", query_embeddings, neg_doc_embeddings) / self.temperature  # [B, N]
+        pos_scores = (query_embeddings * doc_embeddings[offset : offset + neg_doc_embeddings.size(0)]).sum(dim=1)
+        pos_scores /= self.temperature
+        neg_scores = torch.einsum("bd,bnd->bn", query_embeddings, neg_doc_embeddings) / self.temperature
+
         hard_neg_loss = F.softplus(neg_scores - pos_scores.unsqueeze(1)).mean()
 
         # === In-batch InfoNCE ===
@@ -325,11 +317,9 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
                 + in_batch_loss * self.in_batch_term_weight
             )
         else:
-            # If no in-batch term, use only hard negatives.
             contrastive_loss = hard_neg_loss
 
         # === SPLADE FLOPs regularization ===
-        # Update warmup weights before applying regularization.
         if self.q_regularizer is not None:
             self.q_regularizer.step()
         if self.d_regularizer is not None:

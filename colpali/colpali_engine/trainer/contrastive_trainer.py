@@ -229,7 +229,6 @@ class ContrastiveTrainer(Trainer):
         self.log(logs_to_report)
 
         # === Final return: scalar loss by default, or tuple if requested ===
-        print("final_loss:", final_loss)
         result = {"loss": final_loss, **final_logs}
         return result["loss"] if not return_outputs else (result["loss"], result)
 
