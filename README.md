@@ -21,7 +21,7 @@ conda activate modernvbert
 pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 
 # cd into this repo and install the copali-engine in the following way:
-cd modernvbert
+cd modernvbert/colpali
 pip install -e .
 
 # install flash attention:
