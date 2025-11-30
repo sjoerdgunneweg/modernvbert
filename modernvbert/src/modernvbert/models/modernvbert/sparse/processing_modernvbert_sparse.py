@@ -3,7 +3,6 @@ import torch
 from transformers import BatchEncoding, BatchFeature
 from modernvbert.models.modernvbert.processing_modernvbert import ModernVBertProcessor
 
-
 class ModernVBertSparseProcessor(ModernVBertProcessor):
     """
     Processor for the LSR (CLS-MLM) ModernVBertSparse model.

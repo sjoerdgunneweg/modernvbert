@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
-from transformers import ModernVBertPreTrainedModel, ModernVBertModel
-
+from modernvbert.models.modernvbert.modeling_modernvbert import (
+    ModernVBertPreTrainedModel,
+    ModernVBertModel,
+)
 
 class ModernVBertSparse(ModernVBertPreTrainedModel):
     """
@@ -18,7 +20,7 @@ class ModernVBertSparse(ModernVBertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        # Backbone encoder (same as dense ModernVBert)
+        # Backbone encoder
         self.model = ModernVBertModel(config)
 
         # Dimensionality of sparse embeddings
