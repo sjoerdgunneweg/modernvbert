@@ -43,6 +43,7 @@ class ModernVBertTextConfig(PretrainedConfig):
         intermediate_size=1152,
         mlp_bias=False,
         vocab_size=50368,
+        
         **kwargs,
     ):
         super().__init__(
@@ -219,6 +220,7 @@ class ModernVBertConfig(PretrainedConfig):
         self.tie_word_embeddings = tie_word_embeddings
         self.scale_factor = pixel_shuffle_factor
         self.additional_vocab_size = additional_vocab_size
+        self.sparse_dim = kwargs.get("sparse_dim", 128)
 
         if text_config is None:
             base_text_config = AutoConfig.from_pretrained(DEFAULT_TEXT_MODEL_NAME, trust_remote_code=True)
