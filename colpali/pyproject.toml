@@ -9,8 +9,8 @@ source = "vcs"
 include = ["colpali_engine"]
 
 [project]
+version = "0.1.0"
 name = "colpali_engine"
-dynamic = ["version"]
 description = "The code used to train and run inference with the ColPali architecture."
 authors = [
     { name = "Manuel Faysse", email = "manuel.faysse@illuin.tech" },
