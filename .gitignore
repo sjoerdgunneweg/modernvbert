@@ -178,3 +178,6 @@ output/
 *.out
 log/
 wandb/
+
+# results
+results/

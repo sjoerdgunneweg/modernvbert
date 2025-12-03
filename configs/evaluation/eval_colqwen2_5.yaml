@@ -1,0 +1,9 @@
+eval_config:
+  model_name_or_path: vidore/colqwen2.5-v0.2
+  wrapper_cls: ColQwen2_5Wrapper
+  tasks:
+  - ViDoRe(v1)
+  - ViDoRe(v2)
+  batch_size: 32
+  output_folder: results/
+  encode_kwargs: {}

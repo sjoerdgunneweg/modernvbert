@@ -1,0 +1,10 @@
+eval_config:
+  model_name_or_path: jinaai/jina-embeddings-v4
+  wrapper_cls: JinaV4Wrapper
+  tasks:
+  - ViDoRe(v1)
+  - ViDoRe(v2)
+  batch_size: 32
+  output_folder: results/
+  encode_kwargs: {}
+  

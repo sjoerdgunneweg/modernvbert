@@ -10,12 +10,16 @@ import torch
 import mteb
 from mteb.benchmarks import Benchmark
 from mteb.overview import get_tasks
-from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models
+from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip
 from mteb.model_meta import ModelMeta
+
+#--------------------------------------------
+# from mteb.benchmarks import VIDORE, VIDORE_V2
+#--------------------------------------------
 
 from config import load_config
 
-MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models]
+MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip]
 smolmieb = Benchmark(
     name="MIEB(smol)",
     tasks=get_tasks(
@@ -83,6 +87,19 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Path to a YAML or JSON config file.",
     )
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--ViDoRe_V1", "-v1",
+        action="store_true",
+        help="Use ViDoRe V1 benchmark instead of ViDoRe V2.",
+    )
+    group.add_argument(
+        "--ViDoRe_V2", "-v2",
+        action="store_true",
+        help="Use ViDoRe V2 benchmark instead of ViDoRe V1.",
+    )
+
     return parser.parse_args()
 
 def str_to_torch_dtype(dtype_str: str):
@@ -91,7 +108,7 @@ def str_to_torch_dtype(dtype_str: str):
         return getattr(torch, dtype_str)
     except AttributeError as e:
         raise ValueError(f"Unknown torch dtype: {dtype_str}") from e
-    
+
 def str_to_model_class(model_cls_str: str):
     for module in MODELS_MODULES:
         if hasattr(module, model_cls_str):
@@ -100,7 +117,7 @@ def str_to_model_class(model_cls_str: str):
 # ---------------------------
 # Main
 # ---------------------------
-def main(cfg) -> None:
+def main(cfg, args) -> None:
     # --- Logging ---
     logging.getLogger("mteb").setLevel(logging.INFO)
 
@@ -114,14 +131,15 @@ def main(cfg) -> None:
     if len(model_name_or_path.split("/")) > 2:
         name = f"SmolVEncoder/{model_name_or_path.split('/')[-2]}"
     else:
-        name = model_name_or_path.split("/")[-1]
+        # name = model_name_or_path.split("/")[-1]
+        name = model_name_or_path # TODO can i really leave it like this?
 
     print(f"Model class: {model_class}")
     print(f"Model name:  {name}")
 
     custom_model_meta = ModelMeta(
         loader=model_class,
-        name=name,
+        name=name, # TODO   fix this hadcoded part
         modalities=["image", "text"],
         framework=["ColPali"],
         similarity_fn_name="max_sim",
@@ -138,24 +156,91 @@ def main(cfg) -> None:
         public_training_code=None,
         public_training_data=None,
         training_datasets=None,
-    )
+        )
 
 
     custom_model = custom_model_meta.load_model(
-        model_name=model_name_or_path,
+        model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
         torch_dtype=torch.float16,
         attn_implementation="flash_attention_2",
     )
+
+#-------------------------------------------------------------------------
+    print("[INFO] Model loaded successfully:", custom_model)
+    p = next(custom_model.mdl.parameters())
+    print("[INFO] Model load check — first parameter norm:", p.detach().float().norm().item())
+#---------------------------------------------------------------------------
 
     custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
     custom_model.processor.image_processor.do_resize = cfg.eval_config.encode_kwargs.pop("do_resize", True)
 
     # --- Load tasks ---
     # tasks = mteb.get_tasks(tasks=cfg.eval_config.tasks)
-    tasks = smolmieb
+    # tasks = smolmieb
+
+    #-----------------------------------------------------------------------------------------
+
+    VIDORE= Benchmark(
+        name="ViDoRe(v1)",
+        tasks=get_tasks(
+            tasks=[
+                "VidoreArxivQARetrieval",
+                "VidoreDocVQARetrieval",
+                "VidoreInfoVQARetrieval",
+                "VidoreTabfquadRetrieval",
+                "VidoreTatdqaRetrieval",
+                "VidoreShiftProjectRetrieval",
+                "VidoreSyntheticDocQAAIRetrieval",
+                "VidoreSyntheticDocQAEnergyRetrieval",
+                "VidoreSyntheticDocQAGovernmentReportsRetrieval",
+                "VidoreSyntheticDocQAHealthcareIndustryRetrieval",
+            ],
+            languages=["eng"],
+        ),
+        description="Retrieve associated pages according to questions.",
+        reference="https://arxiv.org/abs/2407.01449",
+        citation=r"""
+    @article{faysse2024colpali,
+    author = {Faysse, Manuel and Sibille, Hugues and Wu, Tony and Viaud, Gautier and Hudelot, C{\'e}line and Colombo, Pierre},
+    journal = {arXiv preprint arXiv:2407.01449},
+    title = {ColPali: Efficient Document Retrieval with Vision Language Models},
+    year = {2024},
+
+    }
+    """,
+    )
+
+    VIDORE_V2 = Benchmark(
+        name="ViDoRe(v2)",
+        tasks=get_tasks(
+            tasks=[
+                "Vidore2ESGReportsRetrieval",
+                "Vidore2EconomicsReportsRetrieval",
+                "Vidore2BioMedicalLecturesRetrieval",
+                "Vidore2ESGReportsHLRetrieval",
+            ],
+            languages=["eng"],
+        ),
+        description="Retrieve associated pages according to questions.",
+        reference="https://arxiv.org/abs/2407.01449",
+        citation=r"""
+    @article{mace2025vidorev2,
+    author = {Macé, Quentin and Loison António and Faysse, Manuel},
+    journal = {arXiv preprint arXiv:2505.17166},
+    title = {ViDoRe Benchmark V2: Raising the Bar for Visual Retrieval},
+    year = {2025},
+    }
+    """,
+    )
+
+    if args.ViDoRe_V1:
+        tasks = VIDORE
+    elif args.ViDoRe_V2:
+        tasks = VIDORE_V2
+
     print(f"Tasks loaded: {tasks}")
-    evaluator = mteb.MTEB(tasks=smolmieb)
+    evaluator = mteb.MTEB(tasks=tasks)
 
     # --- Run evaluation ---
     encode_kwargs = {"batch_size": cfg.eval_config.batch_size}
@@ -172,4 +257,4 @@ def main(cfg) -> None:
 if __name__ == "__main__":
     args = parse_args()
     cfg = load_config(args.config)
-    main(cfg)
+    main(cfg, args)
