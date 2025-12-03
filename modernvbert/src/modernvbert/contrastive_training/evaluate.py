@@ -168,8 +168,8 @@ def main(cfg, args) -> None:
 
 #-------------------------------------------------------------------------
     print("[INFO] Model loaded successfully:", custom_model)
-    p = next(custom_model.mdl.parameters())
-    print("[INFO] Model load check — first parameter norm:", p.detach().float().norm().item())
+    # p = next(custom_model.mdl.parameters())
+    # print("[INFO] Model load check — first parameter norm:", p.detach().float().norm().item())
 #---------------------------------------------------------------------------
 
     custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
