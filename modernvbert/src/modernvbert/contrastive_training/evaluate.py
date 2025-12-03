@@ -137,20 +137,12 @@ def main(cfg, args) -> None:
     print(f"Model class: {model_class}")
     print(f"Model name:  {name}")
 
-
-    if name == "jinaai/jina-embeddings-v4": # TODO stuff like this in a config?
-        framework = ["Sentence Transformers", "PyTorch"]
-        similarity_fn_name = "cosine"
-    else:
-        framework = ["ColPali"]
-        similarity_fn_name = "max_sim" 
-
     custom_model_meta = ModelMeta(
         loader=model_class,
         name=name, 
-        modalities=["image", "text"],
-        framework=framework,
-        similarity_fn_name=similarity_fn_name,
+        modalities=["image", "text"], # TODO is this always constant?
+        framework=cfg.eval_config.framework,
+        similarity_fn_name=cfg.eval_config.similarity_fn_name,
         use_instructions=True,
         revision=None,
         release_date=None,
@@ -176,15 +168,12 @@ def main(cfg, args) -> None:
 
 #-------------------------------------------------------------------------
     print("[INFO] Model loaded successfully:", custom_model)
-    # p = next(custom_model.mdl.parameters())
-    # print("[INFO] Model load check — first parameter norm:", p.detach().float().norm().item())
 #---------------------------------------------------------------------------
-
-    if name == "jinaai/jina-embeddings-v4":
-        pass
-    else:
+        
+    if name == "ModernVBERT/colmodernvbert" or name == "ModernVBERT/bimodernvbert":
         custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
         custom_model.processor.image_processor.do_resize = cfg.eval_config.encode_kwargs.pop("do_resize", True)
+    
 
     # --- Load tasks ---
     # tasks = mteb.get_tasks(tasks=cfg.eval_config.tasks)
