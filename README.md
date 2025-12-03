@@ -39,3 +39,26 @@ git switch vbert
 pip install -e .  #-e is important as otherwise you get a can't find package error due to a missing __init__.py file in a subdirectory -_-
 pip install dacite
 ```
+
+### ViDoRe Leaderboard Repdruction Results
+
+| Late Interaction | Model | Model Size (B) | ViDoRe (v1) | ViDoRe (v2, eng) | Average | Latency (s) |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **$\ge$ 1 B Parameters** | | | | | | |
+| | MoCa-3B (Chen et al., 2025) | 3.75 | - | - | - | X |
+| | GME-Qwen- (Zhang et al., 2025) | 3.75 | - | - | - | X |
+| | VLM-Vec (Jiang et al., 2025) | 4.15 | - | - | - | X |
+| | E-V (Jiang et al., 2024) | 8.36 | - | - | - | X |
+| $\checkmark$ | ColPali (Faysse et al., 2025) | 2.92 | - | - | - | - |
+| $\checkmark$ | ColQwen-.- (Faysse et al., 2025) | 3.75 | 88.5 | 60.7 | 74,6 | - |
+| $\checkmark$ | Jina-v- (Günther et al., 2025) | 3.75 | - | - | - | X |
+| $\checkmark$ | NemoRetriever--B (Xu et al., 2025) | 4.40 | - | - | - | - |
+| **< 1 B Parameters** | | | | | | |
+| | Jina CLIP (Koukounas et al., 2024) | 0.22 | - | - | - | - |
+| | BGE Visualized M- (Zhou et al., 2024) | 0.87 | - | - | - | - |
+| | SigLIP--L---/- (Tschannen et al., 2025) | 0.88 | - | - | - | - |
+| $\checkmark$ | ColFlor (Masry & Hoque, 2024) | 0.17 | - | - | - | - |
+| | BiModernVBERT | 0.25 | - | - | - | - |
+| $\checkmark$ | ColModernVBERT | 0.25 | - | - | - | - |
+
+***
