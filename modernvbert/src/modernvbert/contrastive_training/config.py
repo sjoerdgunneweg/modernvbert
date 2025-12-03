@@ -40,6 +40,8 @@ class DatasetArgs:
                 dataset = load_coco_train_set_t2i(self.dataset_name_or_path, **self.loading_kwargs)
         elif "natcap" in self.dataset_name_or_path.lower():
             dataset = load_natcap_train_set(self.dataset_name_or_path, **self.loading_kwargs)
+        elif "rlhn-300k" in self.dataset_name_or_path.lower():
+            dataset = load_rlhn_300K(self.dataset_name_or_path, **self.loading_kwargs)
         elif "rlhn" in self.dataset_name_or_path.lower():
             dataset = load_rlhn_100K(self.dataset_name_or_path, **self.loading_kwargs)
         elif "vidore/colpali_train_set" in self.dataset_name_or_path.lower():
@@ -48,7 +50,7 @@ class DatasetArgs:
             dataset = load_dataset(self.dataset_name_or_path, **self.loading_kwargs)
             dataset = [ColPaliEngineDataset(dataset, query_column_name="query", pos_target_column_name="image")]
         return dataset
-    
+
 @dataclass
 class ModelArgs:
     model_name_or_path: str
@@ -90,7 +92,7 @@ class ModelArgs:
             processor.image_processor.size["longest_edge"] = custom_max_image_size
         processor.image_processor.do_resize = self.processor_kwargs.pop("do_resize", True)
         return processor
-    
+
 @dataclass
 class EvalConfig:
     wrapper_cls: str
@@ -161,7 +163,7 @@ class ColbertTrainingArguments:
         )
 
         return trainer
-    
+
     def load_data(self, split: Literal["train", "eval"] = "train"):
         """
         Load the dataset based on the provided dataset_name_or_path.
@@ -191,7 +193,7 @@ class ColbertTrainingArguments:
             return all_datasets[0]
 
         return all_datasets
-    
+
 def load_config(path, return_dict=False) -> Union[ColbertTrainingArguments, Dict[str, Any]]:
     with open(path, "r") as f:
         data = yaml.safe_load(f)

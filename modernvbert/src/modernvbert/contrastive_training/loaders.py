@@ -72,7 +72,7 @@ class I2TColPaliEngineDataset(T2IColPaliEngineDataset):
         # If an external document corpus is provided, retrieve the documents from it.
         if self.corpus is not None:
             query = self.corpus.retrieve(query)
-            
+
 
         pos_targets = sample[self.pos_target_column_name]
         if not isinstance(pos_targets, list):
@@ -94,7 +94,7 @@ class I2TColPaliEngineDataset(T2IColPaliEngineDataset):
 
 
 def load_mmeb_subset(
-        dataset_name_or_path, 
+        dataset_name_or_path,
         subsets: List[str]
     ) -> Union[T2IColPaliEngineDataset, I2TColPaliEngineDataset]:
     """Returns the query dataset, then the anchor dataset with the documents, then the dataset type"""
@@ -125,7 +125,7 @@ def load_mmeb_subset(
     return dataset_list
 
 def load_colpali_train_set(
-        dataset_name_or_path, 
+        dataset_name_or_path,
         num_negs=2,
         **kwargs
     ) -> T2IColPaliEngineDataset:
@@ -150,8 +150,8 @@ def load_colpali_train_set(
     return dataset_list
 
 def load_colpali_train_set_source(
-        dataset_name_or_path, 
-        subsets=COLPALI_SUBSETS, 
+        dataset_name_or_path,
+        subsets=COLPALI_SUBSETS,
         num_negs=0,
         **kwargs
     ) -> T2IColPaliEngineDataset:
@@ -178,7 +178,7 @@ def load_colpali_train_set_source(
     return dataset_list
 
 # def load_imagenet_train_set(
-#     dataset_name_or_path, 
+#     dataset_name_or_path,
 # ) -> I2TColPaliEngineDataset:
 #     dataset = load_dataset(dataset_name_or_path, split="train").shuffle().take(100_000)
 #     labels = dataset_labels["imagenet"]
@@ -197,7 +197,7 @@ def load_colpali_train_set_source(
 #     return [train_dataset]
 
 # def load_coco_train_set_i2t(
-#     dataset_name_or_path, 
+#     dataset_name_or_path,
 #     **kwargs
 # ) -> I2TColPaliEngineDataset:
 #     dataset = load_dataset(dataset_name_or_path, **kwargs)
@@ -219,7 +219,7 @@ def load_colpali_train_set_source(
 #     return [train_dataset]
 
 # def load_coco_train_set_t2i(
-#     dataset_name_or_path, 
+#     dataset_name_or_path,
 #     **kwargs
 # ) -> T2IColPaliEngineDataset:
 #     dataset = load_dataset(dataset_name_or_path, **kwargs)
@@ -290,6 +290,25 @@ def load_rlhn_100K(
 
     dataset = dataset.map(lambda x: {"positive_passages": [p["text"] for p in x["positive_passages"]]})
     dataset = dataset.map(lambda x: {"negative_passages": [p["text"] for p in x["negative_passages"]][:2]})
+    # Create the T2IColPaliEngineDataset
+    train_dataset = T2IColPaliEngineDataset(
+        data=dataset,
+        query_column_name="query",
+        pos_target_column_name="positive_passages",
+        neg_target_column_name="negative_passages",
+    )
+    return [train_dataset]
+
+def load_rlhn_300k(
+        dataset_name_or_path,
+        num_negs=2,
+        **kwargs
+    ) -> T2IColPaliEngineDataset:
+    print("Loading rlhn_300k set...")
+    dataset = load_dataset("rlhn/rlhn-680K", split="train", **kwargs)
+
+    dataset = dataset.map(lambda x: {"positive_passages": [p["text"] for p in x["positive_passages"]]})
+    dataset = dataset.map(lambda x: {"negative_passages": [p["text"] for p in x["negative_passages"]][:num_negs]})
     # Create the T2IColPaliEngineDataset
     train_dataset = T2IColPaliEngineDataset(
         data=dataset,

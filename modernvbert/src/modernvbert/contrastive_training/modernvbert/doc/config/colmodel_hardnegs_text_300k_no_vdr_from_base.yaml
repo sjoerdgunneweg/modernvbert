@@ -11,6 +11,11 @@ train_dataset_args:
   loading_kwargs:
     num_negs: 1
 - dataset_name_or_path: rlhn/rlhn-100K
+  loading_kwargs:
+    num_negs: 2
+    num_samples: 300000
+    subsets:
+    - train
 tr_args:
   bf16: true
   output_dir: models/colmodernvbert_hardnegs_text_300k_from_base2
