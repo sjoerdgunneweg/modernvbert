@@ -9,7 +9,7 @@ source = "vcs"
 include = ["colpali_engine"]
 
 [project]
-version = "0.1.0"
+version = "vbert"
 name = "colpali_engine"
 description = "The code used to train and run inference with the ColPali architecture."
 authors = [
