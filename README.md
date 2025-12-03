@@ -46,17 +46,17 @@ pip install dacite
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **$\ge$ 1 B Parameters** | | | | | | |
 | MoCa-3B (Chen et al., 2025) | | 3.75 | - | - | - | X |
-| GME-Qwen- (Zhang et al., 2025) | | 3.75 | - | - | - | X |
-| VLM-Vec (Jiang et al., 2025) | | 4.15 | - | - | - | X |
+| GME-Qwen2 (Zhang et al., 2025) | | 3.75 | - | - | - | X |
+| VLM2Vec (Jiang et al., 2025) | | 4.15 | - | - | - | X |
 | E-V (Jiang et al., 2024) | | 8.36 | - | - | - | X |
 | ColPali (Faysse et al., 2025) | $\checkmark$ | 2.92 | - | - | - | - |
-| ColQwen-.- (Faysse et al., 2025) | $\checkmark$ | 3.75 | 88.5 | 60.7 | 74,6 | - |
-| Jina-v- (Günther et al., 2025) | $\checkmark$ | 3.75 | - | - | - | X |
-| NemoRetriever--B (Xu et al., 2025) | $\checkmark$ | 4.40 | - | - | - | - |
+| ColQwen2.5 (Faysse et al., 2025) | $\checkmark$ | 3.75 | 88.5 | 60.7 | 74,6 | - |
+| Jina-v4 (Günther et al., 2025) | $\checkmark$ | 3.75 | - | - | - | X |
+| NemoRetriever-3B (Xu et al., 2025) | $\checkmark$ | 4.40 | - | - | - | - |
 | **< 1 B Parameters** | | | | | | |
 | Jina CLIP (Koukounas et al., 2024) | | 0.22 | - | - | - | - |
-| BGE Visualized M- (Zhou et al., 2024) | | 0.87 | - | - | - | - |
-| SigLIP--L---/- (Tschannen et al., 2025) | | 0.88 | - | - | - | - |
+| BGE Visualized M3 (Zhou et al., 2024) | | 0.87 | - | - | - | - |
+| SigLIP2-L-512/16 (Tschannen et al., 2025) | | 0.88 | - | - | - | - |
 | ColFlor (Masry & Hoque, 2024) | $\checkmark$ | 0.17 | - | - | - | - |
 | BiModernVBERT | | 0.25 | - | - | - | - |
 | ColModernVBERT | $\checkmark$ | 0.25 | - | - | - | - |
