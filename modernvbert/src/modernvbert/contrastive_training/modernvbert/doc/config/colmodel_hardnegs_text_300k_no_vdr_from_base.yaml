@@ -10,7 +10,7 @@ train_dataset_args:
 - dataset_name_or_path: manu/colpali-queries
   loading_kwargs:
     num_negs: 1
-- dataset_name_or_path: rlhn/rlhn-100K
+- dataset_name_or_path: rlhn/rlhn-300k
   loading_kwargs:
     num_negs: 2
     num_samples: 300000
