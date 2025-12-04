@@ -49,8 +49,8 @@ pip install dacite
 | GME-Qwen2 (Zhang et al., 2025) | | 3.75 | - | - | - | X |
 | VLM2Vec (Jiang et al., 2025) | | 4.15 | - | - | - | X |
 | E-V (Jiang et al., 2024) | | 8.36 | - | - | - | X |
-| ColPali (Faysse et al., 2025) | $\checkmark$ | 2.92 | - | - | - | - |
-| ColQwen2.5 (Faysse et al., 2025) | $\checkmark$ | 3.75 | 88.5 | 60.7 | 74,6 | - |
+| ColPali (Faysse et al., 2025) | $\checkmark$ | 2.92 | 70.3 | 45.4 | 57.9 | - |
+| ColQwen2.5 (Faysse et al., 2025) | $\checkmark$ | 3.75 | 89.6 | 61.9 | 75,8 | - |
 | Jina-v4 (Günther et al., 2025) | $\checkmark$ | 3.75 | - | - | - | X |
 | NemoRetriever-3B (Xu et al., 2025) | $\checkmark$ | 4.40 | - | - | - | - |
 | **< 1 B Parameters** | | | | | | |
