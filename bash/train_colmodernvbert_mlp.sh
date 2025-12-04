@@ -1,0 +1,2 @@
+accelerate launch --num_processes=2 --main_process_port 29502 modernvbert/src/modernvbert/contrastive_training/train.py \
+     -c modernvbert/src/modernvbert/contrastive_training/modernvbert/doc/config/colmodel_hardnegs_text_300k_no_vdr_from_base_sparse_mlp.yaml > log/colmodel_hardnegs_text_300k_no_vdr_from_base_sparse_mlp.log 2>&1 &
