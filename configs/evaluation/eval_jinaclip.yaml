@@ -8,4 +8,4 @@ eval_config:
   output_folder: results/
   encode_kwargs: {}
   framework: ["PyTorch"]
-  similarity_fn_name: None
+  similarity_fn_name: "cosine"
