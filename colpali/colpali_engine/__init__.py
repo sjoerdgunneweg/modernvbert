@@ -23,5 +23,6 @@ from .models import (
     ColQwen2Processor,
     ColModernVBertSparse,
     ColModernVBertSparseProcessor,
-    
+    ColModernVBertMLPSparse,
+    ColModernVBertMLPSparseProcessor,
 )
