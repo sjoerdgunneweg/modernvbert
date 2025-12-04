@@ -41,7 +41,7 @@ class DatasetArgs:
         elif "natcap" in self.dataset_name_or_path.lower():
             dataset = load_natcap_train_set(self.dataset_name_or_path, **self.loading_kwargs)
         elif "rlhn-300k" in self.dataset_name_or_path.lower():
-            dataset = load_rlhn_300K(self.dataset_name_or_path, **self.loading_kwargs)
+            dataset = load_rlhn_300k(self.dataset_name_or_path, **self.loading_kwargs)
         elif "rlhn" in self.dataset_name_or_path.lower():
             dataset = load_rlhn_100K(self.dataset_name_or_path, **self.loading_kwargs)
         elif "vidore/colpali_train_set" in self.dataset_name_or_path.lower():
