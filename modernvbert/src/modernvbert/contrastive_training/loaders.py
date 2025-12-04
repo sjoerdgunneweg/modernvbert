@@ -302,10 +302,9 @@ def load_rlhn_100K(
 def load_rlhn_300k(
         dataset_name_or_path,
         num_negs=2,
-        **kwargs
     ) -> T2IColPaliEngineDataset:
     print("Loading rlhn_300k set...")
-    dataset = load_dataset("rlhn/rlhn-680K", split="train", **kwargs)
+    dataset = load_dataset("rlhn/rlhn-680K", split="train")
 
     dataset = dataset.map(lambda x: {"positive_passages": [p["text"] for p in x["positive_passages"]]})
     dataset = dataset.map(lambda x: {"negative_passages": [p["text"] for p in x["negative_passages"]][:num_negs]})
