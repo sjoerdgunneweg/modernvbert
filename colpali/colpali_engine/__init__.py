@@ -11,6 +11,8 @@ from .models import (
     ColIdefics3Processor,
     ColModernVBert,
     ColModernVBertProcessor,
+    ColFlor,
+    ColFlorProcessor,
     ColPali,
     ColPaliProcessor,
     ColQwen2,
