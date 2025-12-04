@@ -10,7 +10,7 @@ import torch
 import mteb
 from mteb.benchmarks import Benchmark
 from mteb.overview import get_tasks
-from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip
+from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models
 from mteb.model_meta import ModelMeta
 
 #--------------------------------------------
@@ -19,7 +19,7 @@ from mteb.model_meta import ModelMeta
 
 from config import load_config
 
-MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip]
+MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models]
 smolmieb = Benchmark(
     name="MIEB(smol)",
     tasks=get_tasks(
@@ -159,7 +159,7 @@ def main(cfg, args) -> None:
         )
 
     custom_model = custom_model_meta.load_model(
-        model = name, # some wrappers expect model name here
+        model = name, # some wrappers expect model name here # TODO
         model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
         torch_dtype=torch.float16,

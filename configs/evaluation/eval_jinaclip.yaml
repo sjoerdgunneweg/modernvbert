@@ -1,0 +1,11 @@
+eval_config:
+  model_name_or_path: jinaai/jina-clip-v1
+  wrapper_cls: JinaCLIPModelWrapper
+  tasks:
+  - ViDoRe(v1)
+  - ViDoRe(v2)
+  batch_size: 32
+  output_folder: results/
+  encode_kwargs: {}
+  framework: ["PyTorch"]
+  similarity_fn_name: None
