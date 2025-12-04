@@ -302,6 +302,7 @@ def load_rlhn_100K(
 def load_rlhn_300k(
         dataset_name_or_path,
         num_negs=2,
+        **kwargs
     ) -> T2IColPaliEngineDataset:
     print("Loading rlhn_300k set...")
     dataset = load_dataset("rlhn/rlhn-680K", split="train")
