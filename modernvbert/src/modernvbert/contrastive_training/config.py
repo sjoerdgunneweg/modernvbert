@@ -104,6 +104,7 @@ class EvalConfig:
     #----------------
     framework: List[str] = field(default_factory=list)
     similarity_fn_name: str = "max_sim"
+    attn_implementation: str = "flash_attention_2"
     #----------------
 
 @dataclass

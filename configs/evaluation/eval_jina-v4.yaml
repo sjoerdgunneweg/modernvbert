@@ -9,4 +9,5 @@ eval_config:
   encode_kwargs: {}
   framework: ["Sentence Transformers", "PyTorch"]
   similarity_fn_name: "cosine"
+  attn_implementation: "flash_attention_2"
   

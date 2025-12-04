@@ -163,7 +163,7 @@ def main(cfg, args) -> None:
         model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
         torch_dtype=torch.float16,
-        attn_implementation="flash_attention_2",
+        attn_implementation=cfg.eval_config.attn_implementation,
     )
 
 #-------------------------------------------------------------------------

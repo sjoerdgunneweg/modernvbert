@@ -9,3 +9,4 @@ eval_config:
   encode_kwargs: {}
   framework: ["ColPali"]
   similarity_fn_name: "max_sim"
+  attn_implementation: None
