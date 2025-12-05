@@ -308,7 +308,7 @@ def load_rlhn_300k(
     print("Loading rlhn_300k set...")
     dataset = load_dataset("rlhn/rlhn-680K", split="train")
 
-    dataset = dataset.shuffle(seed=42).select(num_samples)
+    dataset = dataset.shuffle(seed=42).select(range(num_samples))
 
     dataset = dataset.map(lambda x: {"positive_passages": [p["text"] for p in x["positive_passages"]]})
     dataset = dataset.map(lambda x: {"negative_passages": [p["text"] for p in x["negative_passages"]][:num_negs]})
