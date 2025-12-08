@@ -62,3 +62,5 @@ if __name__ == "__main__":
         help="List of tasks to aggregate nCDG@5 over.",
     )
     args = args.parse_args()
+
+    main(args)

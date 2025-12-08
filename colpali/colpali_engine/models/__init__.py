@@ -1,3 +1,4 @@
+from .florence2 import ColFlor, ColFlorProcessor
 from .idefics3 import BiIdefics3, BiIdefics3Processor, ColIdefics3, ColIdefics3Processor
 from .modernvbert import BiModernVBert, BiModernVBertProcessor, ColModernVBert, ColModernVBertProcessor, ColModernVBertSparse, ColModernVBertSparseProcessor
 from .paligemma import BiPali, BiPaliProcessor, BiPaliProj, ColPali, ColPaliProcessor

@@ -1,12 +1,12 @@
 eval_config:
-  model_name_or_path: ModernVBERT/bimodernvbert
-  wrapper_cls: BiModernVBertWrapper
+  model_name_or_path: jinaai/jina-clip-v1
+  wrapper_cls: JinaCLIPModelWrapper
   tasks:
   - ViDoRe(v1)
   - ViDoRe(v2)
   batch_size: 32
   output_folder: results/
   encode_kwargs: {}
-  framework: ["ColPali"]
-  similarity_fn_name: "max_sim"
+  framework: ["PyTorch"]
+  similarity_fn_name: "cosine"
   attn_implementation: "flash_attention_2"

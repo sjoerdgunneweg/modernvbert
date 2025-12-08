@@ -10,7 +10,7 @@ import torch
 import mteb
 from mteb.benchmarks import Benchmark
 from mteb.overview import get_tasks
-from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip
+from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models
 from mteb.model_meta import ModelMeta
 
 #--------------------------------------------
@@ -19,7 +19,7 @@ from mteb.model_meta import ModelMeta
 
 from config import load_config
 
-MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip]
+MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models]
 smolmieb = Benchmark(
     name="MIEB(smol)",
     tasks=get_tasks(
@@ -137,20 +137,12 @@ def main(cfg, args) -> None:
     print(f"Model class: {model_class}")
     print(f"Model name:  {name}")
 
-
-    if name == "jinaai/jina-embeddings-v4": # TODO stuff like this in a config?
-        framework = ["Sentence Transformers", "PyTorch"]
-        similarity_fn_name = "cosine"
-    else:
-        framework = ["ColPali"]
-        similarity_fn_name = "max_sim" 
-
     custom_model_meta = ModelMeta(
         loader=model_class,
         name=name, 
-        modalities=["image", "text"],
-        framework=framework,
-        similarity_fn_name=similarity_fn_name,
+        modalities=["image", "text"], # TODO is this always constant?
+        framework=cfg.eval_config.framework,
+        similarity_fn_name=cfg.eval_config.similarity_fn_name,
         use_instructions=True,
         revision=None,
         release_date=None,
@@ -167,24 +159,20 @@ def main(cfg, args) -> None:
         )
 
     custom_model = custom_model_meta.load_model(
-        model = name, # some wrappers expect model name here
         model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
         torch_dtype=torch.float16,
-        attn_implementation="flash_attention_2",
+        attn_implementation=cfg.eval_config.attn_implementation,
     )
 
 #-------------------------------------------------------------------------
     print("[INFO] Model loaded successfully:", custom_model)
-    # p = next(custom_model.mdl.parameters())
-    # print("[INFO] Model load check — first parameter norm:", p.detach().float().norm().item())
 #---------------------------------------------------------------------------
-
-    if name == "jinaai/jina-embeddings-v4":
-        pass
-    else:
+        
+    if name == "ModernVBERT/colmodernvbert" or name == "ModernVBERT/bimodernvbert":
         custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
         custom_model.processor.image_processor.do_resize = cfg.eval_config.encode_kwargs.pop("do_resize", True)
+    
 
     # --- Load tasks ---
     # tasks = mteb.get_tasks(tasks=cfg.eval_config.tasks)
