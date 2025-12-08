@@ -103,6 +103,12 @@ class EvalConfig:
     encode_kwargs: Dict[str, Any] = field(default_factory=dict)
     model_name_or_path: str = None
 
+    #----------------
+    framework: List[str] = field(default_factory=list)
+    similarity_fn_name: str = "max_sim"
+    attn_implementation: str = "flash_attention_2"
+    #----------------
+
 @dataclass
 class ColbertTrainingArguments:
     """

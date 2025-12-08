@@ -7,4 +7,7 @@ eval_config:
   batch_size: 32
   output_folder: results/
   encode_kwargs: {}
+  framework: ["Sentence Transformers", "PyTorch"]
+  similarity_fn_name: "cosine"
+  attn_implementation: "flash_attention_2"
   
