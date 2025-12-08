@@ -159,7 +159,6 @@ def main(cfg, args) -> None:
         )
 
     custom_model = custom_model_meta.load_model(
-        model = name, # some wrappers expect model name here # TODO
         model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
         torch_dtype=torch.float16,
