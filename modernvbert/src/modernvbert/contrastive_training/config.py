@@ -1,6 +1,6 @@
 import torch
 from transformers import TrainingArguments, EarlyStoppingCallback
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, PeftModel
 from typing import Any, Union, List, Literal, Dict
 from dataclasses import dataclass, field
 from datasets import load_dataset
@@ -136,7 +136,11 @@ class ColbertTrainingArguments:
             print("Resume from last checkpoint")
             resume_path = max(chkpts, key=os.path.getctime)
             model = self.model_args.load_model(resume_path=resume_path)
-            model.print_trainable_parameters()
+            model = PeftModel.from_pretrained(model,
+                                  resume_path,
+                                  is_trainable=True, # 👈 here,
+
+)
         else:
             print("New model, initializing the LoRAs")
             model = self.model_args.load_model()
