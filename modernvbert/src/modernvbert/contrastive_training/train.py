@@ -44,7 +44,7 @@ def main():
         return
 
     trainer = cfg.build_trainer()
-    result = trainer.train(resume_from_checkpoint=cfg.tr_args.resume_from_checkpoint)
+    result = trainer.train(resume_from_checkpoint=True)
     print_summary(result)
 
     save(trainer, is_smolvlm_processor=True)
