@@ -167,6 +167,7 @@ class ColbertTrainingArguments:
             is_vision_model=True,
             compute_symetric_loss=False,
             callbacks=callbacks,
+            restore_callback_states_from_checkpoint=True
         )
         print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
         print(trainer.state.global_step)
