@@ -269,7 +269,7 @@ class ModernVBertModel(ModernVBertPreTrainedModel):
         print(freeze_cfg)
         if not isinstance(freeze_cfg, dict):
             freeze_cfg = {}
-            freeze_text_layers = freeze_cfg.get("freeze_text_layers", False)
+        freeze_text_layers = freeze_cfg.get("freeze_text_layers", False)
 
         embed_layer = DecoupledEmbedding(
             num_embeddings=text_model_config.vocab_size,
