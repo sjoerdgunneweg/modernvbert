@@ -144,9 +144,8 @@ class ColbertTrainingArguments:
             model = self.model_args.load_model(resume_path=resume_path)
             model = PeftModel.from_pretrained(model,
                                   resume_path,
-                                  is_trainable=True, # 👈 here,
-
-)
+                                  is_trainable=True
+                                  )
         else:
             print("New model, initializing the LoRAs")
             model = self.model_args.load_model()

@@ -10,7 +10,7 @@ import logging
 SMOLVLM_PROCESSOR_CONFIG_PATH = Path("/lustre/fswork/projects/rech/nwd/uyn61im/visual_encoder/assets/default_config/processor_config.json")
 
 logging.getLogger("datasets").setLevel(logging.ERROR)
-    
+
 def save(trainer, is_smolvlm_processor=False):
     """
     Save the trained model and processor to the specified output directory.
@@ -38,13 +38,13 @@ def main():
     if accelerator.is_main_process:
         print("Loaded configuration:")
         print(cfg)
-         
+
     if os.path.exists(f"{cfg.tr_args.output_dir}/final"):
         print(f"Output directory {cfg.tr_args.output_dir}/final already exists. Please remove it or choose a different output directory.")
         return
 
     trainer = cfg.build_trainer()
-    result = trainer.train()
+    result = trainer.train(resume_from_checkpoint=cfg.tr_args.resume_from_checkpoint)
     print_summary(result)
 
     save(trainer, is_smolvlm_processor=True)
