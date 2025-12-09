@@ -141,7 +141,7 @@ class ColbertTrainingArguments:
         if len(chkpts) > 0:
             print("Resume from last checkpoint")
             resume_path = max(chkpts, key=os.path.getctime)
-            model = self.model_args.load_model(resume_path=resume_path)
+            model = self.model_args.load_model()
             model = get_peft_model(model, self.lora_config)
         else:
             print("New model, initializing the LoRAs")
