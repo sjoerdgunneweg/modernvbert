@@ -142,10 +142,7 @@ class ColbertTrainingArguments:
             print("Resume from last checkpoint")
             resume_path = max(chkpts, key=os.path.getctime)
             model = self.model_args.load_model(resume_path=resume_path)
-            # model = PeftModel.from_pretrained(model,
-            #                       resume_path,
-            #                       is_trainable=True
-            #                       )
+            model = get_peft_model(model, self.lora_config)
         else:
             print("New model, initializing the LoRAs")
             model = self.model_args.load_model()
