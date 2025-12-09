@@ -169,7 +169,7 @@ class ColbertTrainingArguments:
             callbacks=callbacks,
         )
         print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
-        print(trainer.global_step)
+        print(trainer.state.global_step)
 
         return trainer
 
