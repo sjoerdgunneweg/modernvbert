@@ -118,8 +118,6 @@ class ContrastiveTrainer(Trainer):
 
     def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
 
-        return super()._get_train_sampler()
-
         if self.train_dataset_list is None:
             return super()._get_train_sampler()
 
