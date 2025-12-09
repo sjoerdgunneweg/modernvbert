@@ -168,6 +168,8 @@ class ColbertTrainingArguments:
             compute_symetric_loss=False,
             callbacks=callbacks,
         )
+        print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+        print(trainer.global_step)
 
         return trainer
 
