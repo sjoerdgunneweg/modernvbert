@@ -20,7 +20,8 @@ tr_args:
   bf16: true
   output_dir: models/colmodernvbert_hardnegs_text_300k_from_base2
   num_train_epochs: 3
-  per_device_train_batch_size: 16
+  per_device_train_batch_size: 8
+  gradient_accumulation_steps: 2
   per_device_eval_batch_size: 8
   gradient_accumulation_steps: 1
   gradient_checkpointing: false
