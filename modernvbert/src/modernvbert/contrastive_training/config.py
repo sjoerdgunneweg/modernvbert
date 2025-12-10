@@ -142,6 +142,8 @@ class ColbertTrainingArguments:
             print("Resume from last checkpoint")
             resume_path = max(chkpts, key=os.path.getctime)
             model = self.model_args.load_model(resume_path=resume_path)
+            model = get_peft_model(model, self.lora_config)
+            model.print_trainable_parameters()
         else:
             print("New model, initializing the LoRAs")
             model = self.model_args.load_model()
