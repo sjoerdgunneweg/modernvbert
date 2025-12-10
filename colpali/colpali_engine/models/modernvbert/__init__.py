@@ -2,3 +2,4 @@ from .bivbert import BiModernVBert, BiModernVBertProcessor
 from .colvbert import ColModernVBert, ColModernVBertProcessor
 from .mlm_sparse import ColModernVBertSparse, ColModernVBertSparseProcessor
 from .mlp_sparse import ColModernVBertMLPSparse, ColModernVBertMLPSparseProcessor
+from .m2 import ColModernVBertM2Wrapper, ColModernVBertM2Processor
