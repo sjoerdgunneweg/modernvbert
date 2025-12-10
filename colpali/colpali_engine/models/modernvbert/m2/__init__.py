@@ -1,0 +1,2 @@
+from .modeling_colmodernvbert_m2_wrapper import ColModernVBertM2Wrapper
+from .processing_colmodernvbert_m2_wrapper import ColModernVBertM2Processor
