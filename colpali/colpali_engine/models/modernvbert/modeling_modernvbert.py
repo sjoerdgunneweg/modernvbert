@@ -266,7 +266,7 @@ class ModernVBertModel(ModernVBertPreTrainedModel):
         )
         text_model = AutoModel.from_config(text_model_config, trust_remote_code=True)
         freeze_cfg = getattr(config, "freeze_config", None)
-        print(freeze_cfg)
+
         if not isinstance(freeze_cfg, dict):
             freeze_cfg = {}
         freeze_text_layers = freeze_cfg.get("freeze_text_layers", False)
