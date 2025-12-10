@@ -6,8 +6,8 @@ from transformers import BatchEncoding, BatchFeature, Idefics3Processor
 from colpali_engine.utils.processing_utils import BaseVisualRetrieverProcessor
 from colpali_engine.utils.sparse_rep import SparseRep
 
-from .processing_colmodernvbert_mlp_sparse import ColModernVBertMLPSparseProcessor
-from .processing_colmodernvbert_sparse import ColModernVBertSparseProcessor
+from ..mlp_sparse.processing_colmodernvbert_mlp_sparse import ColModernVBertMLPSparseProcessor
+from ..mlm_sparse.processing_colmodernvbert_sparse import ColModernVBertSparseProcessor
 
 
 class ColModernVBertM2Processor(BaseVisualRetrieverProcessor, Idefics3Processor):
