@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 from colpali_engine.models.modernvbert.modeling_modernvbert import (
-    ModernVBertModel,
+    ModernVBertForMaskedLM,
     ModernVBertPreTrainedModel,
 )
 from colpali_engine.utils.sparse_rep import SparseRep
@@ -37,14 +37,11 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
 
     def __init__(self, config, mask_non_image_embeddings: bool = False, **kwargs):
         super().__init__(config=config)
-        self.model = ModernVBertModel(config, **kwargs)
+        self.model = ModernVBertForMaskedLM(config, **kwargs)
         self.mask_non_image_embeddings = mask_non_image_embeddings
         self.main_input_name = "doc_input_ids"
 
-        # Add the SPLADE head (mlm)
-        hidden_size = self.model.config.text_config.hidden_size
-        vocab_size = self.model.config.text_config.vocab_size
-        self.splade_head = nn.Linear(hidden_size, vocab_size, bias=True)
+        # Add max_pool layer:
         self.max_pool = MaxPoolValue(dim=1)  # row-wise max pooling
 
 
@@ -66,8 +63,7 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
                           external normalization).
         """
         output = self.model(*args, **kwargs)
-        last_hidden_states = output[0]  # (B, L, H)
-        logits = self.splade_head(last_hidden_states)  # (B, L, V)
+        logits = output[0]  # (B, L, V)
 
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
