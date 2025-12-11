@@ -44,7 +44,6 @@ def main():
         return
 
     trainer = cfg.build_trainer()
-    print("cheese")
     result = trainer.train(resume_from_checkpoint=cfg.tr_args.resume_from_checkpoint)
     print_summary(result)
 

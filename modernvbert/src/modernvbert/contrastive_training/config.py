@@ -1,6 +1,6 @@
 import torch
 from transformers import TrainingArguments, EarlyStoppingCallback
-from peft import LoraConfig, get_peft_model, PeftModel
+from peft import LoraConfig, get_peft_model
 from typing import Any, Union, List, Literal, Dict
 from dataclasses import dataclass, field
 from datasets import load_dataset
@@ -137,19 +137,11 @@ class ColbertTrainingArguments:
 
 
         # Load the model
-        chkpts = list(Path(self.tr_args.output_dir).glob("checkpoint-*"))
-        if len(chkpts) > 0:
-            print("Resume from last checkpoint")
-            resume_path = max(chkpts, key=os.path.getctime)
-            model = self.model_args.load_model()
-            model = get_peft_model(model, self.lora_config, )
-            model.print_trainable_parameters()
-        else:
-            print("New model, initializing the LoRAs")
-            model = self.model_args.load_model()
-            # Wrap the model with LoRA
-            model = get_peft_model(model, self.lora_config)
-            model.print_trainable_parameters()
+        print("Loading model...")
+        model = self.model_args.load_model()
+        # Wrap the model with LoRA
+        model = get_peft_model(model, self.lora_config)
+        model.print_trainable_parameters()
 
         # Load the processor
         processor = self.model_args.load_processor()
@@ -169,8 +161,6 @@ class ColbertTrainingArguments:
             compute_symetric_loss=False,
             callbacks=callbacks,
         )
-        print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
-        print(trainer.state.global_step)
 
         return trainer
 
