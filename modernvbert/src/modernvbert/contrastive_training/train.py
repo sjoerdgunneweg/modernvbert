@@ -45,7 +45,7 @@ def main():
 
     trainer = cfg.build_trainer()
     print("cheese")
-    result = trainer.train(resume_from_checkpoint="/home/scur1709/modernvbert/models/colmodernvbert_hardnegs_text_300k_from_base2/checkpoint-7500")
+    result = trainer.train(resume_from_checkpoint=cfg.tr_args.resume_from_checkpoint)
     print_summary(result)
 
     save(trainer, is_smolvlm_processor=True)
