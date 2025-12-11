@@ -26,6 +26,8 @@ pip install -e .
 
 # install flash attention:
 pip install flash-attn --no-build-isolation
+
+pip install wandb
 ```
 
 ### Eval
