@@ -1,6 +1,6 @@
 model_args:
   model_name_or_path: ModernVBERT/modernvbert
-  model_type: ColModernVBertSparse
+  model_type: SparseModernVBertMLM
   loss_type: SparseBiNegativeCELoss
   loading_kwargs:
     attn_implementation: flash_attention_2

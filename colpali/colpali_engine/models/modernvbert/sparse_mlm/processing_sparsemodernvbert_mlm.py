@@ -1,12 +1,13 @@
 from typing import ClassVar, List, Optional, Tuple, Union
 import torch
 from PIL import Image
-from transformers import BatchEncoding, BatchFeature, Idefics3Processor
+from transformers import BatchEncoding, BatchFeature
 
-from colpali_engine.utils.processing_utils import BaseVisualRetrieverProcessor
+from colpali_engine.models.modernvbert.colvbert import ColModernVBertProcessor
 
 
-class ColModernVBertSparseProcessor(BaseVisualRetrieverProcessor, Idefics3Processor):
+
+class SparseModernVBertMLMProcessor(ColModernVBertProcessor):
     """
     Processor for ColIdefics3.
     """
@@ -64,39 +65,15 @@ class ColModernVBertSparseProcessor(BaseVisualRetrieverProcessor, Idefics3Proces
         device: Optional[Union[str, torch.device]] = None,
         **kwargs,
     ) -> torch.Tensor:
-        # Move to device and concatenate chunks
-        if device is None:
-            device = qs[0].device
 
-        q = torch.cat([q.to(device) for q in qs], dim=0)  # (Q, V)
-        p = torch.cat([p.to(device) for p in ps], dim=0)  # (P, V)
+        # Convert SparseRep to dense tensors
+        qs = [q.to_dense() for q in qs]
+        ps = [p.to_dense() for p in ps]
 
-        # Safety checks (optional but helpful while debugging)
-        if q.dim() != 2 or p.dim() != 2:
-            raise ValueError(
-                f"SPLADE scoring expects 2D tensors (batch, vocab). "
-                f"Got q.shape={q.shape}, p.shape={p.shape}"
-            )
-        if q.size(-1) != p.size(-1):
-            raise ValueError(
-                f"Query and passage vocab dims must match, "
-                f"got {q.size(-1)} and {p.size(-1)}"
-            )
+        return self.score_single_vector(qs, ps, device=device)
 
-        # SPLADE similarity = dot product between sparse vocab vectors  # (Q, V) @ (V, P) -> (Q, P)
-        scores = q @ p.t()
-        return scores
-
-
-    def get_n_patches(
-        self,
-        image_size: Tuple[int, int],
-        patch_size: int,
-    ) -> Tuple[int, int]:
-        raise NotImplementedError("This method is not implemented for ColIdefics3.")
-    
     def get_query_len(self) -> int:
         raise NotImplementedError("Return mean length of sparse vectors")
-    
+
     def get_doc_len(self) -> int:
         raise NotImplementedError("Return mean length of sparse vectors")
