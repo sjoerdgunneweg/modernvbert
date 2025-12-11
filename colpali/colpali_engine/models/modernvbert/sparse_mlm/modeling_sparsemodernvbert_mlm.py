@@ -38,6 +38,8 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
     def __init__(self, config, mask_non_image_embeddings: bool = False, **kwargs):
         super().__init__(config=config)
         self.model = ModernVBertModel(config, **kwargs)
+        self.mask_non_image_embeddings = mask_non_image_embeddings
+        self.main_input_name = "doc_input_ids"
 
         # Add the SPLADE head (mlm)
         hidden_size = self.model.config.text_config.hidden_size
@@ -45,8 +47,7 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
         self.splade_head = nn.Linear(hidden_size, vocab_size, bias=True)
         self.max_pool = MaxPoolValue(dim=1)  # row-wise max pooling
 
-        self.mask_non_image_embeddings = mask_non_image_embeddings
-        self.main_input_name = "doc_input_ids"
+
 
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
