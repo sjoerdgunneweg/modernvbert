@@ -9,6 +9,7 @@ from transformers import Trainer, is_datasets_available
 from transformers.trainer_utils import seed_worker
 
 from colpali_engine.data.sampler import SingleDatasetBatchSampler
+from colpali_engine.utils.sparse_rep import SparseRep
 
 
 def concat_all_gather(t: torch.Tensor) -> torch.Tensor:
