@@ -53,39 +53,54 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         self.main_input_name = "doc_input_ids"
         self.max_pool = MaxPoolValue(dim=1)  # row-wise max pooling
 
-    def forward(self, *args, **kwargs) -> torch.Tensor:
+    def forward(self, input_ids=None, attention_mask=None, special_tokens_mask=None, pixel_values=None, **kwargs) -> SparseRep:
         """
         Forward pass through ModernVBert + SPLADE head.
 
         Args:
-            *args, **kwargs: passed directly to ModernVBertModel.
+            input_ids:      [B, L]
+            attention_mask: [B, L]
+            pixel_values:   optional, if multimodal
+            special_tokens_mask: [B, L] mask for special tokens
 
-        Expected keyword args:
-            - input_ids:      [B, L]
-            - attention_mask: [B, L]
-            - pixel_values:   optional, if multimodal
         Returns:
-            token_scores: [B, V] SPLADE-style sparse scores (before any
-                          external normalization).
+            SparseRep with indices=[B,L], values=[B,L], size=[B, V]
         """
-        outputs = self.model(*args, **kwargs)
+        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, pixel_values=pixel_values, **kwargs)
         last_hidden_states = outputs[0]  # (B, L, H)
         logits = self.splade_head(last_hidden_states)  # (B, L, V)
 
         token_scores = torch.log1p(torch.relu(logits))  # (B, L, V)
 
-        # 4) Mask out padding tokens
-        if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
-            mask = kwargs["attention_mask"].unsqueeze(-1).to(token_scores.dtype)  # (B, L, 1)
+        # Mask out padding tokens
+        if attention_mask is not None:
+            mask = attention_mask.unsqueeze(-1).to(token_scores.dtype)  # (B, L, 1)
             token_scores = token_scores * mask
 
-        # 5) Optional: keep only image tokens (if you're in a multi-modal setting)
-        if self.mask_non_image_embeddings and "pixel_values" in kwargs and "input_ids" in kwargs:
+        # Mask out special tokens
+        if special_tokens_mask is not None:
+            special_mask = (1 - special_tokens_mask).unsqueeze(-1).to(token_scores.dtype)  # (B, L, 1)
+            token_scores = token_scores * special_mask
+
+       
+        if self.mask_non_image_embeddings and pixel_values is not None and input_ids is not None:
             # assuming config.image_token_id is the special token marking image features
-            image_mask = (kwargs["input_ids"] == self.config.image_token_id).unsqueeze(-1)  # (B, L, 1)
+            image_mask = (input_ids == self.config.image_token_id).unsqueeze(-1)  # (B, L, 1)
             image_mask = image_mask.to(token_scores.dtype)
             token_scores = token_scores * image_mask
 
-        # 6) Max-pool over sequence dimension → [B, V]
-        token_scores = self.max_pool(token_scores)  # (B, V)
-        return token_scores
+        # Max-pool over vocab dimension to get per-token scores
+        # token_scores: (B, L, V) -> (B, L) by taking max over V
+        token_scores = torch.max(token_scores, dim=-1).values  # (B, L)
+
+        vocab_size = self.splade_head.out_features
+        size = torch.tensor(
+            [token_scores.size(0), vocab_size],
+            device=token_scores.device,
+        )
+
+        return SparseRep(
+            indices=input_ids,     # (B, L)
+            values=token_scores,   # (B, L)
+            size=size,             # [batch, vocab]
+        )
