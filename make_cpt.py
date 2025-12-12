@@ -32,6 +32,8 @@ for key, value in source_state_dict.items():
 # 5. Load this new constructed state dict
 print("Loading constructed state dict...")
 missing, unexpected = model.load_state_dict(new_state_dict, strict=False)
+print(f"Missing keys: {missing}")
+print(f"Unexpected keys: {unexpected}")
 
 # 6. Save as a standard Hugging Face model
 print(f"Saving canonical checkpoint to {save_path}...")
