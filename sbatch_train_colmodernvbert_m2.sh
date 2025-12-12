@@ -24,14 +24,9 @@ export HF_HOME=$SCRATCH/huggingface
 export TRANSFORMERS_CACHE=$HF_HOME
 export HF_DATASETS_CACHE=$HF_HOME
 
-export WANDB_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
 export WANDB_PROJECT=vbert_m2
-export WANDB_LOG_MODEL=false
 export WANDB_RUN_GROUP=colmodernvbert-m2
-export WANDB_NAME=contrastive_${SLURM_JOB_ID}
-export TOKENIZERS_PARALLELISM=false
-export WANDB_RESUME=allow
-export WANDB_RUN_ID=${SLURM_JOB_ID}
+
 
 srun python colpali/scripts/train/train_colbert.py \
   colpali/scripts/configs/modernvbert/train_colmodernvbert_m2.yaml
