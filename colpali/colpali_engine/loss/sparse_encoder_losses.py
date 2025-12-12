@@ -176,72 +176,91 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         )
 
    
-    def forward(self, q, d, neg_d, offset: int = 0):
-        B = q.batch_size() if isinstance(q, SparseRep) else q.size(0)
-        N = neg_d.shape[1]  # [B, N, ...]
+    def forward(
+            self,
+            query_embeddings=None,
+            doc_embeddings=None,
+            neg_doc_embeddings=None,
+            offset: int = 0,
+            **kwargs,
+        ):
+            q = query_embeddings
+            d = doc_embeddings
+            neg_d = neg_doc_embeddings
 
-   
-        if isinstance(q, SparseRep):
-            pos_scores = q.element_wise_dot(d)
-        else:
-            pos_scores = (q * d).sum(dim=1)
+            # Batch sizes
+            if isinstance(q, SparseRep):
+                B = q.batch_size()
+            else:
+                B = q.size(0)
 
-        pos_scores = pos_scores / self.temperature  # [B]
+            N = neg_d.shape[1]
 
+            # ========= POSITIVE SCORES =========
+            if isinstance(q, SparseRep):
+                pos_scores = q.element_wise_dot(d)
+            else:
+                pos_scores = (q * d).sum(dim=1)
 
-        if isinstance(q, SparseRep):
+            pos_scores = pos_scores / self.temperature
 
-            neg_flat = SparseRep(
-                indices=neg_d.indices.view(B * N, -1),
-                values=neg_d.values.view(B * N, -1),
-                size=neg_d.size,
-            )
-            neg_scores_full = q.cross_dot(neg_flat)  # [B, B*N]
-            neg_scores = neg_scores_full.view(B, N)
-        else:
-            neg_scores = torch.einsum("bd,bnd->bn", q, neg_d)
+            # ========= NEGATIVE SCORES =========
+            if isinstance(q, SparseRep):
+                neg_flat = SparseRep(
+                    indices=neg_d.indices.view(B * N, -1),
+                    values=neg_d.values.view(B * N, -1),
+                    size=neg_d.size,
+                )
+                neg_scores_full = q.cross_dot(neg_flat)
+                neg_scores = neg_scores_full.view(B, N)
+            else:
+                neg_scores = torch.einsum("bd,bnd->bn", q, neg_d)
 
-        neg_scores = neg_scores / self.temperature  # [B, N]
+            neg_scores = neg_scores / self.temperature
 
- 
-        hard_neg_loss = F.softplus(neg_scores - pos_scores.unsqueeze(1)).mean()
+            # ========= HARD-NEG LOSS =========
+            hard_neg_loss = F.softplus(neg_scores - pos_scores.unsqueeze(1)).mean()
 
+            # ========= IN-BATCH LOSS =========
+            if self.in_batch_term_weight > 0:
+                in_batch_loss = self.in_batch_loss(q, d, offset)
+                contrastive_loss = (
+                    hard_neg_loss * (1 - self.in_batch_term_weight)
+                    + in_batch_loss * self.in_batch_term_weight
+                )
+            else:
+                contrastive_loss = hard_neg_loss
 
-        if self.in_batch_term_weight > 0:
-            in_batch = self.in_batch_loss(q, d, offset)
-            contrastive_loss = (
-                hard_neg_loss * (1 - self.in_batch_term_weight)
-                + in_batch * self.in_batch_term_weight
-            )
-        else:
-            contrastive_loss = hard_neg_loss
+            # ========= REGULARIZATION =========
+            if self.q_regularizer:
+                self.q_regularizer.step()
+                reg_q = self.q_regularizer(q)
+            else:
+                reg_q = 0
 
+            if self.d_regularizer:
+                self.d_regularizer.step()
 
-        if self.q_regularizer:
-            self.q_regularizer.step()
-        if self.d_regularizer:
-            self.d_regularizer.step()
+                if isinstance(neg_d, SparseRep):
+                    docs_all = SparseRep(
+                        indices=torch.cat([d.indices, neg_d.indices.view(B * N, -1)], dim=0),
+                        values=torch.cat([d.values, neg_d.values.view(B * N, -1)], dim=0),
+                        size=d.size,
+                    )
+                else:
+                    docs_all = torch.cat([d, neg_d.reshape(B * N, -1)], dim=0)
 
-        reg_q = self.q_regularizer(q) if self.q_regularizer else 0
+                reg_d = self.d_regularizer(docs_all)
+            else:
+                reg_d = 0
 
-        if isinstance(neg_d, SparseRep):
-            docs_all = SparseRep(
-                indices=torch.cat([d.indices, neg_d.indices.view(B * N, -1)], dim=0),
-                values=torch.cat([d.values, neg_d.values.view(B * N, -1)], dim=0),
-                size=d.size,
-            )
-        else:
-            docs_all = torch.cat([d, neg_d.reshape(B * N, -1)], dim=0)
+            total = contrastive_loss + reg_q + reg_d
 
-        reg_d = self.d_regularizer(docs_all) if self.d_regularizer else 0
-
-        total = contrastive_loss + reg_q + reg_d
-
-        return {
-            "loss": total,
-            "contrastive_loss": contrastive_loss,
-            "reg_q": reg_q,
-            "reg_d": reg_d,
-            "query_length": num_active_terms(q),
-            "doc_length": num_active_terms(d),
-        }
+            return {
+                "loss": total,
+                "contrastive_loss": contrastive_loss,
+                "reg_q": reg_q,
+                "reg_d": reg_d,
+                "query_length": num_active_terms(q),
+                "doc_length": num_active_terms(d),
+            }
