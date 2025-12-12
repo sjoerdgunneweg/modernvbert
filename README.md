@@ -26,6 +26,8 @@ pip install -e .
 
 # install flash attention:
 pip install flash-attn --no-build-isolation
+
+pip install wandb
 ```
 
 ### Eval
@@ -35,7 +37,7 @@ Evaluation uses the vbert branch from mteb. Use the following command to install
 ```bash
 git clone git@github.com:paultltc/mteb-vlm.git
 cd mteb-vlm
-git switch vbert
+git switch a5102b8f0479eab07defe8376b1d758e7cf2b5cd --detach
 pip install -e .  #-e is important as otherwise you get a can't find package error due to a missing __init__.py file in a subdirectory -_-
 pip install dacite
 pip install timm
@@ -62,3 +64,8 @@ pip install timm
 | BiModernVBERT | | 0.25 | - | - | - | - |
 | ColModernVBERT | $\checkmark$ | 0.25 | - | - | - | - |
 
+
+# repo information:
+The starting points of these repo are:
+- (modernvbert repo at specific commithash) https://github.com/illuin-tech/modernvbert/tree/d4727bde0525991585cc13ccdedecf32c69ed25c
+- (colpali repo at vbert branch and specifc commithash) https://github.com/illuin-tech/colpali/tree/eb561da6dd665c42e90572c8488ad3c6e114a409
