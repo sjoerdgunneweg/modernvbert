@@ -3,9 +3,15 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 from torch import nn
 from typing import Optional, Dict, Any
+
 from colpali_engine.utils.sparse_rep import SparseRep
 
+
 def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
+    """
+    Average number of active (non-zero) dimensions per example.
+    Works for SparseRep or dense tensors.
+    """
     if isinstance(a, SparseRep):
         return (a.values > threshold).float().sum(dim=1).mean()
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
@@ -28,14 +34,14 @@ class Regularizer(nn.Module):
         raise NotImplementedError
 
 
-
 class FLOPs(Regularizer):
     """
-    FLOPS LOSS
+    FLOPs-style sparsity regularizer, à la SPLADE.
     """
 
     def forward(self, reps):
         if isinstance(reps, SparseRep):
+            # reps.values: [B, L] (non-zero term weights)
             flops = F.softplus(reps.values).sum() / reps.batch_size()
             return flops * self.weight_t
 
@@ -51,6 +57,10 @@ class L1(Regularizer):
 
 
 class SparseBiEncoderModule(nn.Module):
+    """
+    Base module for sparse bi-encoder losses (handles indexing, filtering, etc).
+    """
+
     def __init__(
         self,
         max_batch_size: int = 1024,
@@ -75,6 +85,11 @@ class SparseBiEncoderModule(nn.Module):
         return idx, pos_idx
 
     def _filter_high_negatives(self, scores, pos_idx):
+        """
+        Down-weight negatives that are too close to positives.
+        scores: [B, B]
+        pos_idx: [B]
+        """
         B = scores.size(0)
         idx = self.idx_buffer[:B].to(scores.device)
 
@@ -82,13 +97,16 @@ class SparseBiEncoderModule(nn.Module):
         thresh = self.filter_threshold * pos_scores.unsqueeze(1)
 
         mask = scores > thresh
-        mask[idx, pos_idx] = False
+        mask[idx, pos_idx] = False  # don't touch diagonals
 
         scores[mask] = scores[mask] * self.filter_factor
 
 
-
 class SparseBiEncoderLoss(SparseBiEncoderModule):
+    """
+    In-batch InfoNCE-style loss with optional regularization.
+    """
+
     def __init__(
         self,
         temperature: float = 0.02,
@@ -106,11 +124,10 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
         self.q_regularizer = q_regularizer
         self.d_regularizer = d_regularizer
 
-
     def forward(self, q, d, offset: int = 0):
-      
+        # scores: [B, B]
         if isinstance(q, SparseRep):
-            scores = q.cross_dot(d)  # [B, B]
+            scores = q.cross_dot(d)
         else:
             scores = torch.einsum("bd,cd->bc", q, d)
 
@@ -122,17 +139,15 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
         if self.pos_aware_negative_filtering:
             self._filter_high_negatives(scores, pos_idx)
 
-        # update regularization warmup
+        # Regularization warmup
         if self.q_regularizer:
             self.q_regularizer.step()
         if self.d_regularizer:
             self.d_regularizer.step()
 
-        # compute regularization
-        reg_q = self.q_regularizer(q) if self.q_regularizer else 0
-        reg_d = self.d_regularizer(d) if self.d_regularizer else 0
+        reg_q = self.q_regularizer(q) if self.q_regularizer else 0.0
+        reg_d = self.d_regularizer(d) if self.d_regularizer else 0.0
 
-        # softmax cross-entropy
         scores = scores / self.temperature
         ce = self.ce_loss(scores, pos_idx)
 
@@ -141,9 +156,10 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
 
 class SparseBiNegativeCELoss(SparseBiEncoderModule):
     """
-    True SPLADE contrastive objective.
-
-    Supports sparse query & doc reps.
+    SPLADE-style contrastive loss with:
+      - in-batch InfoNCE
+      - optional hard negatives
+      - FLOPs / L1 regularization for sparsity
     """
 
     def __init__(
@@ -167,6 +183,7 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         self.q_regularizer = q_regularizer
         self.d_regularizer = d_regularizer
 
+        # in-batch term WITHOUT its own regularization
         self.in_batch_loss = SparseBiEncoderLoss(
             temperature=temperature,
             pos_aware_negative_filtering=pos_aware_negative_filtering,
@@ -175,27 +192,123 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
             d_regularizer=None,
         )
 
-   
-    def forward(self, q, d, neg_d=None, offset: int = 0):
-            # training without negatives
-            if neg_d is None:
-                if self.q_regularizer:
-                    self.q_regularizer.step()
-                if self.d_regularizer:
-                    self.d_regularizer.step()
+    def forward(
+        self,
+        query_embeddings=None,
+        doc_embeddings=None,
+        neg_doc_embeddings=None,
+        offset: int = 0,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        query_embeddings: SparseRep or [B, D]
+        doc_embeddings:   SparseRep or [B, D]
+        neg_doc_embeddings: None or [B, N, D] or SparseRep-like packed
+        """
 
-                in_batch = self.in_batch_loss(q, d, offset)
-                reg_q = self.q_regularizer(q) if self.q_regularizer else 0
-                reg_d = self.d_regularizer(d) if self.d_regularizer else 0
+        q = query_embeddings
+        d = doc_embeddings
+        neg_d = neg_doc_embeddings
 
-                total = in_batch + reg_q + reg_d
+        # ==========================================================
+        # CASE 1: no explicit negatives -> only in-batch term + regs
+        # ==========================================================
+        if neg_d is None:
+            if self.q_regularizer:
+                self.q_regularizer.step()
+            if self.d_regularizer:
+                self.d_regularizer.step()
 
-                return {
-                    "loss": total,
-                    "contrastive_loss": in_batch,
-                    "reg_q": reg_q,
-                    "reg_d": reg_d,
-                    "query_length": num_active_terms(q),
-                    "doc_length": num_active_terms(d),
-                }
+            in_batch = self.in_batch_loss(q, d, offset)
+            reg_q = self.q_regularizer(q) if self.q_regularizer else 0.0
+            reg_d = self.d_regularizer(d) if self.d_regularizer else 0.0
 
+            total = in_batch + reg_q + reg_d
+
+            return {
+                "loss": total,
+                "contrastive_loss": in_batch,
+                "reg_q": reg_q,
+                "reg_d": reg_d,
+                "query_length": num_active_terms(q),
+                "doc_length": num_active_terms(d),
+            }
+
+        # ==========================================================
+        # CASE 2: with hard negatives
+        # ==========================================================
+        if isinstance(q, SparseRep):
+            B = q.batch_size()
+        else:
+            B = q.size(0)
+
+        N = neg_d.shape[1]
+
+        # -------- Positive scores [B] --------
+        if isinstance(q, SparseRep):
+            pos_scores = q.element_wise_dot(d)
+        else:
+            pos_scores = (q * d).sum(dim=1)
+        pos_scores = pos_scores / self.temperature
+
+        # -------- Negative scores [B, N] --------
+        if isinstance(q, SparseRep):
+            # Assume neg_d is like a batched SparseRep with .indices/.values/.size
+            neg_flat = SparseRep(
+                indices=neg_d.indices.view(B * N, -1),
+                values=neg_d.values.view(B * N, -1),
+                size=neg_d.size,
+            )
+            neg_scores_full = q.cross_dot(neg_flat)  # [B, B*N]
+            neg_scores = neg_scores_full.view(B, N)
+        else:
+            neg_scores = torch.einsum("bd,bnd->bn", q, neg_d)
+
+        neg_scores = neg_scores / self.temperature
+
+        # Hard negative contrastive loss
+        hard_neg_loss = F.softplus(neg_scores - pos_scores.unsqueeze(1)).mean()
+
+        # In-batch term
+        if self.in_batch_term_weight > 0:
+            in_batch = self.in_batch_loss(q, d, offset)
+            contrastive_loss = (
+                hard_neg_loss * (1 - self.in_batch_term_weight)
+                + in_batch * self.in_batch_term_weight
+            )
+        else:
+            contrastive_loss = hard_neg_loss
+
+        # Regularization
+        if self.q_regularizer:
+            self.q_regularizer.step()
+            reg_q = self.q_regularizer(q)
+        else:
+            reg_q = 0.0
+
+        if self.d_regularizer:
+            self.d_regularizer.step()
+
+            if isinstance(neg_d, SparseRep):
+                docs_all = SparseRep(
+                    indices=torch.cat([d.indices, neg_d.indices.view(B * N, -1)], dim=0),
+                    values=torch.cat([d.values, neg_d.values.view(B * N, -1)], dim=0),
+                    size=d.size,
+                )
+            else:
+                docs_all = torch.cat([d, neg_d.reshape(B * N, -1)], dim=0)
+
+            reg_d = self.d_regularizer(docs_all)
+        else:
+            reg_d = 0.0
+
+        total = contrastive_loss + reg_q + reg_d
+
+        return {
+            "loss": total,
+            "contrastive_loss": contrastive_loss,
+            "reg_q": reg_q,
+            "reg_d": reg_d,
+            "query_length": num_active_terms(q),
+            "doc_length": num_active_terms(d),
+        }
