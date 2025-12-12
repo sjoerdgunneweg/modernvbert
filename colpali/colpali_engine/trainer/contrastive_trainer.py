@@ -53,7 +53,7 @@ class ContrastiveTrainer(Trainer):
         self.eval_dataset_list = eval_dataset_list
         self.compute_symetric_loss = compute_symetric_loss
         self.query_prefix = "query_"
-        self.pos_prefix   = "pos_doc_"
+        self.pos_prefix   = "doc_"
         self.neg_prefix   = "neg_doc_"
 
         
