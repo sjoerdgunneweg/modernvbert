@@ -1,5 +1,6 @@
 import torch
-from colpali_engine.models import ModernVBertForMaskedLM, SparseModernVBertM2
+from colpali_engine.models.modernvbert.modeling_modernvbert import ModernVBertForMaskedLM
+from colpali_engine.models import SparseModernVBertM2
 from colpali_engine.models.modernvbert.configuration_modernvbert import ModernVBertConfig
 # Import your custom class
 
