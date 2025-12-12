@@ -223,7 +223,7 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
 
             total = in_batch + reg_q + reg_d
 
-            return {
+            out = {
                 "loss": total,
                 "contrastive_loss": in_batch,
                 "reg_q": reg_q,
@@ -231,6 +231,9 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
                 "query_length": num_active_terms(q),
                 "doc_length": num_active_terms(d),
             }
+
+            return out if self.training else total
+
 
         if isinstance(q, SparseRep):
             B = q.batch_size()
