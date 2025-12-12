@@ -60,7 +60,7 @@ config:
     learning_rate: 2e-4
     save_total_limit: 1
     resume_from_checkpoint: false
-    report_to: "none"
+    report_to: "wandb"
 
   peft_config:
     (): peft.LoraConfig

@@ -10,6 +10,7 @@ from transformers.trainer_utils import seed_worker
 
 from colpali_engine.data.sampler import SingleDatasetBatchSampler
 from colpali_engine.utils.sparse_rep import SparseRep
+from colpali_engine.utils.distributed import gather_sparserep
 
 
 def concat_all_gather(t: torch.Tensor) -> torch.Tensor:
@@ -159,78 +160,85 @@ class ContrastiveTrainer(Trainer):
         )
     
     def _compute_loss_from_outputs(
-            self,
-            query_outputs,
-            pos_target_outputs,
-            neg_target_outputs=None,
-        ):
-            offset = 0
+        self,
+        query_outputs,
+        pos_target_outputs,
+        neg_target_outputs=None,
+    ):
+        offset = 0
 
-            # handle Tensor or SparseRep
-            if isinstance(query_outputs, SparseRep):
-                batch_size = query_outputs.batch_size()
+        # batch size
+        if isinstance(query_outputs, SparseRep):
+            batch_size = query_outputs.batch_size()
+        else:
+            batch_size = query_outputs.size(0)
+
+        if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
+            if isinstance(pos_target_outputs, SparseRep):
+                pos_target_outputs = gather_sparserep(pos_target_outputs)
             else:
-                batch_size = query_outputs.size(0)
-
-            if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
-                # ⚠ this branch assumes tensors – OK for now if you're single-GPU
-                pos_target_outputs = self.accelerator.pad_across_processes(
-                    pos_target_outputs, dim=1, pad_index=0, pad_first=True
-                )
                 pos_target_outputs = concat_all_gather(pos_target_outputs)
-                rank = self.accelerator.process_index
-                offset = rank * batch_size
 
-            if neg_target_outputs is not None:
-                loss = self.loss_func(
-                    query_embeddings=query_outputs,
-                    doc_embeddings=pos_target_outputs,
-                    neg_doc_embeddings=neg_target_outputs,
-                    offset=offset,
-                )
-            else:
-                loss = self.loss_func(
-                    query_embeddings=query_outputs,
-                    doc_embeddings=pos_target_outputs,
-                    offset=offset,
-                )
+            offset = self.accelerator.process_index * batch_size
 
-            if isinstance(loss, dict):
-                return loss
-            else:
-                return {"loss": loss}
+        if neg_target_outputs is not None:
+            loss = self.loss_func(
+                query_embeddings=query_outputs,
+                doc_embeddings=pos_target_outputs,
+                neg_doc_embeddings=neg_target_outputs,
+                offset=offset,
+            )
+        else:
+            loss = self.loss_func(
+                query_embeddings=query_outputs,
+                doc_embeddings=pos_target_outputs,
+                offset=offset,
+            )
 
+        return loss if isinstance(loss, dict) else {"loss": loss}
+        
     # def _compute_loss_from_outputs(
-    #     self,
-    #     query_outputs,
-    #     pos_target_outputs,
-    #     neg_target_outputs=None,
-    # ):
-    #     offset = 0
-    #     batch_size = query_outputs.size(0)
-    #     if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
-    #         # gather docs across all processes
-    #         pos_target_outputs = self.accelerator.pad_across_processes(
-    #             pos_target_outputs, dim=1, pad_index=0, pad_first=True
-    #         )
-    #         pos_target_outputs = concat_all_gather(pos_target_outputs)
-    #         rank = self.accelerator.process_index
-    #         offset = rank * batch_size
+    #         self,
+    #         query_outputs,
+    #         pos_target_outputs,
+    #         neg_target_outputs=None,
+    #     ):
+    #         offset = 0
 
-    #     if neg_target_outputs is not None:
-    #         loss = self.loss_func(
-    #             query_embeddings=query_outputs,
-    #             doc_embeddings=pos_target_outputs,
-    #             neg_doc_embeddings=neg_target_outputs,
-    #             offset=offset,
-    #         )
-    #     else:
-    #         loss = self.loss_func(query_embeddings=query_outputs, doc_embeddings=pos_target_outputs, offset=offset)
+    #         # handle Tensor or SparseRep
+    #         if isinstance(query_outputs, SparseRep):
+    #             batch_size = query_outputs.batch_size()
+    #         else:
+    #             batch_size = query_outputs.size(0)
 
-    #     if isinstance(loss, dict):
-    #         return loss
-    #     else:
-    #         return {"loss": loss}
+    #         if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
+    #             # ⚠ this branch assumes tensors – OK for now if you're single-GPU
+    #             pos_target_outputs = self.accelerator.pad_across_processes(
+    #                 pos_target_outputs, dim=1, pad_index=0, pad_first=True
+    #             )
+    #             pos_target_outputs = concat_all_gather(pos_target_outputs)
+    #             rank = self.accelerator.process_index
+    #             offset = rank * batch_size
+
+    #         if neg_target_outputs is not None:
+    #             loss = self.loss_func(
+    #                 query_embeddings=query_outputs,
+    #                 doc_embeddings=pos_target_outputs,
+    #                 neg_doc_embeddings=neg_target_outputs,
+    #                 offset=offset,
+    #             )
+    #         else:
+    #             loss = self.loss_func(
+    #                 query_embeddings=query_outputs,
+    #                 doc_embeddings=pos_target_outputs,
+    #                 offset=offset,
+    #             )
+
+    #         if isinstance(loss, dict):
+    #             return loss
+    #         else:
+    #             return {"loss": loss}
+
 
     def _reshape_neg_doc_inputs(self, inputs):
         """

@@ -1,49 +1,40 @@
 #!/bin/bash
-#SBATCH --job-name=colmv_m2_train
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:4
-#SBATCH --cpus-per-task=16
-#SBATCH --time=24:00:00
-#SBATCH --partition=gpu
-#SBATCH --output=logs/colmv_m2_%j.out
-#SBATCH --error=logs/colmv_m2_%j.err
+#SBATCH --partition=gpu_a100
+#SBATCH --gpus=4
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --job-name=contrastive_vbert_m2
+#SBATCH --time=60:00:00
+#SBATCH --output=output/%x_%j.out
+#SBATCH --error=output/%x_%j.err
 
-# Create logs directory if it doesn't exist
-mkdir -p logs
+set -e
 
-# Snellius-specific module setup
+mkdir -p output
+
 module purge
 module load 2025
 module load Anaconda3/2025.06-1
 module load CUDA/12.8.0
 
-# Activate conda environment
-source $CONDA_PREFIX/etc/profile.d/conda.sh
-conda activate modernvbert
-
-# Set cache directories to avoid repeated HF model downloads
-export HF_HOME=/scratch/$USER/huggingface
-export TRANSFORMERS_CACHE=$HF_HOME
-mkdir -p $HF_HOME
-
-# Disable W&B to avoid login issues; set to "online" if you have wandb configured
-export WANDB_MODE=offline
-
-# Navigate to project root (adjust path if needed)
 cd $HOME/ir2/modernvbert
+source activate modernvbert
 
-# Number of GPUs available on this node
-NUM_GPUS=4
-MAIN_PORT=29502
+export HF_HOME=$SCRATCH/huggingface
+export TRANSFORMERS_CACHE=$HF_HOME
+export HF_DATASETS_CACHE=$HF_HOME
 
-echo "Starting training on $(hostname)"
-echo "CUDA visible devices: $CUDA_VISIBLE_DEVICES"
-echo "Using $NUM_GPUS GPUs"
-echo "Config: colpali/scripts/configs/modernvbert/train_colmodernvbert_m2.yaml"
-echo "Time: $(date)"
+export WANDB_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
+export WANDB_PROJECT=vbert_m2
+export WANDB_ENTITY=your_username_or_team
+export WANDB_LOG_MODEL=false
+export WANDB_RUN_GROUP=colmodernvbert-m2
+export WANDB_NAME=contrastive_${SLURM_JOB_ID}
+export TOKENIZERS_PARALLELISM=false
+export WANDB_RESUME=allow
+export WANDB_RUN_ID=${SLURM_JOB_ID}
 
-# Run training using the colpali training script with configue
-python colpali/scripts/train/train_colbert.py colpali/scripts/configs/modernvbert/train_colmodernvbert_m2.yaml
+srun python colpali/scripts/train/train_colbert.py \
+  colpali/scripts/configs/modernvbert/train_colmodernvbert_m2.yaml
 
 echo "Training completed at $(date)"
