@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=gpu_a100
-#SBATCH --gpus=4
+#SBATCH --gpus=2
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --job-name=contrastive_vbert_m2
