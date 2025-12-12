@@ -38,7 +38,7 @@ tr_args:
   run_name: colmodernvbert_hardnegs_text_300k_from_base2
   report_to: wandb
   use_symmetric_loss: false # No symmetric loss with hard negatives
-  resume_from_checkpoint: /home/scur1709/modernvbert/models/colmodernvbert_hardnegs_text_300k_from_base2/checkpoint-7500
+  # resume_from_checkpoint: /home/scur1709/modernvbert/models/colmodernvbert_hardnegs_text_300k_from_base2/checkpoint-7500
 lora_config:
   r: 32
   lora_alpha: 32
