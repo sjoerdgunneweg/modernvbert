@@ -120,6 +120,26 @@ class ContrastiveTrainer(Trainer):
                 self._eval_dataloaders = {dataloader_key: dataloader}
 
         return self.accelerator.prepare(dataloader)
+    
+    def _extract_tensor(self, output, name="output"):
+        # If model returns {"embeddings": tensor}
+        if isinstance(output, dict):
+            if "embeddings" in output:
+                return output["embeddings"]
+            if "last_hidden_state" in output:
+                return output["last_hidden_state"]
+            raise ValueError(f"{name} dict does not contain embeddings")
+
+        # If model returns tuple(tensor, ...)
+        if isinstance(output, tuple):
+            return output[0]
+
+        # If already tensor
+        if isinstance(output, torch.Tensor):
+            return output
+
+        raise TypeError(f"{name} is not a tensor. Got {type(output)}")
+
 
     def _get_train_sampler(self, train_dataset=None) -> Optional[torch.utils.data.Sampler]:
         if self.train_dataset_list is None:
@@ -196,6 +216,9 @@ class ContrastiveTrainer(Trainer):
 
         query_outputs = model(**query_inputs)
         doc_outputs   = model(**doc_inputs)
+
+        query_outputs = self._extract_tensor(query_outputs, "query_outputs")
+        doc_outputs   = self._extract_tensor(doc_outputs, "doc_outputs")
 
         # === Hard negatives ===
         neg_doc_outputs = None
