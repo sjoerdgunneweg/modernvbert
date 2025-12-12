@@ -304,11 +304,4 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
 
         total = contrastive_loss + reg_q + reg_d
 
-        return {
-            "loss": total,
-            "contrastive_loss": contrastive_loss,
-            "reg_q": reg_q,
-            "reg_d": reg_d,
-            "query_length": num_active_terms(q),
-            "doc_length": num_active_terms(d),
-        }
+        return total
