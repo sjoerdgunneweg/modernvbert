@@ -128,11 +128,11 @@ def main(cfg, args) -> None:
     else:
         model_name_or_path = cfg.tr_args.output_dir + "/final"
 
-    if len(model_name_or_path.split("/")) > 2:
-        name = f"SmolVEncoder/{model_name_or_path.split('/')[-2]}"
-    else:
+    # if len(model_name_or_path.split("/")) > 2: # TODO: only removed this since path of locally saved model is longer than 2
+    #     name = f"SmolVEncoder/{model_name_or_path.split('/')[-2]}"
+    # else:
         # name = model_name_or_path.split("/")[-1]
-        name = model_name_or_path # TODO can i really leave it like this?
+    name = model_name_or_path # TODO can i really leave it like this?
 
     print(f"Model class: {model_class}")
     print(f"Model name:  {name}")
@@ -169,7 +169,8 @@ def main(cfg, args) -> None:
     print("[INFO] Model loaded successfully:", custom_model)
 #---------------------------------------------------------------------------
         
-    if name == "ModernVBERT/colmodernvbert" or name == "ModernVBERT/bimodernvbert":
+    if name == "ModernVBERT/colmodernvbert" or name == "ModernVBERT/bimodernvbert" or "colmodernvbert_reproduction" in name:
+        print("[INFO] Adjusting image processor settings for ColModernVBert model...")
         custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
         custom_model.processor.image_processor.do_resize = cfg.eval_config.encode_kwargs.pop("do_resize", True)
     
