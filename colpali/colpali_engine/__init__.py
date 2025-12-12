@@ -23,5 +23,9 @@ from .models import (
     ColQwen2Processor,
     SparseModernVBertMLM,
     SparseModernVBertMLMProcessor,
+    SparseModernVBertMLP,
+    SparseModernVBertMLPProcessor,
+    SparseModernVBertM2,
+    SparseModernVBertM2Processor,
 
 )
