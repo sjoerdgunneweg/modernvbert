@@ -30,6 +30,10 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
         - Max-pools over sequence dimension → [B, V] sparse scores
     """
 
+    _tied_weights_keys = [
+        "model.model.text_model.embeddings.tok_embeddings.weight",
+        "model.lm_head.weight"
+    ]
     supports_gradient_checkpointing = True
     _supports_flash_attn_2 = True
     _supports_sdpa = True
