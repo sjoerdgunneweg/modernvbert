@@ -4,9 +4,6 @@ from torch.nn import CrossEntropyLoss
 from torch import nn
 from typing import Optional, Dict, Any
 
-from colpali_engine.utils.sparse_rep import SparseRep
-
-
 def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
     if isinstance(a, SparseRep):
         return (a.values > threshold).float().sum(dim=1).mean()
