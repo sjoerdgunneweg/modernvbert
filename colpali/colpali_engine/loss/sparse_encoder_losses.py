@@ -210,9 +210,7 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         d = doc_embeddings
         neg_d = neg_doc_embeddings
 
-        # ==========================================================
-        # CASE 1: no explicit negatives -> only in-batch term + regs
-        # ==========================================================
+
         if neg_d is None:
             if self.q_regularizer:
                 self.q_regularizer.step()
@@ -234,9 +232,6 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
                 "doc_length": num_active_terms(d),
             }
 
-        # ==========================================================
-        # CASE 2: with hard negatives
-        # ==========================================================
         if isinstance(q, SparseRep):
             B = q.batch_size()
         else:
@@ -253,7 +248,7 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
 
         # -------- Negative scores [B, N] --------
         if isinstance(q, SparseRep):
-            # Assume neg_d is like a batched SparseRep with .indices/.values/.size
+           
             neg_flat = SparseRep(
                 indices=neg_d.indices.view(B * N, -1),
                 values=neg_d.values.view(B * N, -1),
@@ -304,4 +299,17 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
 
         total = contrastive_loss + reg_q + reg_d
 
-        return total
+        out = {
+            "loss": total,
+            "contrastive_loss": contrastive_loss,
+            "reg_q": reg_q,
+            "reg_d": reg_d,
+            "query_length": num_active_terms(q),
+            "doc_length": num_active_terms(d),
+        }
+
+        # HF Trainer compatibility
+        if self.training:
+            return out
+        else:
+            return total
