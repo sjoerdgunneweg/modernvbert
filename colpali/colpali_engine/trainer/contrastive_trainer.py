@@ -121,24 +121,24 @@ class ContrastiveTrainer(Trainer):
 
         return self.accelerator.prepare(dataloader)
     
-    def _extract_tensor(self, output, name="output"):
-        # If model returns {"embeddings": tensor}
-        if isinstance(output, dict):
-            if "embeddings" in output:
-                return output["embeddings"]
-            if "last_hidden_state" in output:
-                return output["last_hidden_state"]
-            raise ValueError(f"{name} dict does not contain embeddings")
+    # def _extract_tensor(self, output, name="output"):
+    #     # If model returns {"embeddings": tensor}
+    #     if isinstance(output, dict):
+    #         if "embeddings" in output:
+    #             return output["embeddings"]
+    #         if "last_hidden_state" in output:
+    #             return output["last_hidden_state"]
+    #         raise ValueError(f"{name} dict does not contain embeddings")
 
-        # If model returns tuple(tensor, ...)
-        if isinstance(output, tuple):
-            return output[0]
+    #     # If model returns tuple(tensor, ...)
+    #     if isinstance(output, tuple):
+    #         return output[0]
 
-        # If already tensor
-        if isinstance(output, torch.Tensor):
-            return output
+    #     # If already tensor
+    #     if isinstance(output, torch.Tensor):
+    #         return output
 
-        raise TypeError(f"{name} is not a tensor. Got {type(output)}")
+    #     raise TypeError(f"{name} is not a tensor. Got {type(output)}")
 
 
     def _get_train_sampler(self, train_dataset=None) -> Optional[torch.utils.data.Sampler]:
@@ -156,38 +156,80 @@ class ContrastiveTrainer(Trainer):
             drop_last=self.args.dataloader_drop_last,
             generator=generator,
         )
-
+    
     def _compute_loss_from_outputs(
-        self,
-        query_outputs,
-        pos_target_outputs,
-        neg_target_outputs=None,
-    ):
-        offset = 0
-        batch_size = query_outputs.size(0)
-        if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
-            # gather docs across all processes
-            pos_target_outputs = self.accelerator.pad_across_processes(
-                pos_target_outputs, dim=1, pad_index=0, pad_first=True
-            )
-            pos_target_outputs = concat_all_gather(pos_target_outputs)
-            rank = self.accelerator.process_index
-            offset = rank * batch_size
+            self,
+            query_outputs,
+            pos_target_outputs,
+            neg_target_outputs=None,
+        ):
+            offset = 0
 
-        if neg_target_outputs is not None:
-            loss = self.loss_func(
-                query_embeddings=query_outputs,
-                doc_embeddings=pos_target_outputs,
-                neg_doc_embeddings=neg_target_outputs,
-                offset=offset,
-            )
-        else:
-            loss = self.loss_func(query_embeddings=query_outputs, doc_embeddings=pos_target_outputs, offset=offset)
+            # handle Tensor or SparseRep
+            if isinstance(query_outputs, SparseRep):
+                batch_size = query_outputs.batch_size()
+            else:
+                batch_size = query_outputs.size(0)
 
-        if isinstance(loss, dict):
-            return loss
-        else:
-            return {"loss": loss}
+            if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
+                # ⚠ this branch assumes tensors – OK for now if you're single-GPU
+                pos_target_outputs = self.accelerator.pad_across_processes(
+                    pos_target_outputs, dim=1, pad_index=0, pad_first=True
+                )
+                pos_target_outputs = concat_all_gather(pos_target_outputs)
+                rank = self.accelerator.process_index
+                offset = rank * batch_size
+
+            if neg_target_outputs is not None:
+                loss = self.loss_func(
+                    query_embeddings=query_outputs,
+                    doc_embeddings=pos_target_outputs,
+                    neg_doc_embeddings=neg_target_outputs,
+                    offset=offset,
+                )
+            else:
+                loss = self.loss_func(
+                    query_embeddings=query_outputs,
+                    doc_embeddings=pos_target_outputs,
+                    offset=offset,
+                )
+
+            if isinstance(loss, dict):
+                return loss
+            else:
+                return {"loss": loss}
+
+    # def _compute_loss_from_outputs(
+    #     self,
+    #     query_outputs,
+    #     pos_target_outputs,
+    #     neg_target_outputs=None,
+    # ):
+    #     offset = 0
+    #     batch_size = query_outputs.size(0)
+    #     if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
+    #         # gather docs across all processes
+    #         pos_target_outputs = self.accelerator.pad_across_processes(
+    #             pos_target_outputs, dim=1, pad_index=0, pad_first=True
+    #         )
+    #         pos_target_outputs = concat_all_gather(pos_target_outputs)
+    #         rank = self.accelerator.process_index
+    #         offset = rank * batch_size
+
+    #     if neg_target_outputs is not None:
+    #         loss = self.loss_func(
+    #             query_embeddings=query_outputs,
+    #             doc_embeddings=pos_target_outputs,
+    #             neg_doc_embeddings=neg_target_outputs,
+    #             offset=offset,
+    #         )
+    #     else:
+    #         loss = self.loss_func(query_embeddings=query_outputs, doc_embeddings=pos_target_outputs, offset=offset)
+
+    #     if isinstance(loss, dict):
+    #         return loss
+    #     else:
+    #         return {"loss": loss}
 
     def _reshape_neg_doc_inputs(self, inputs):
         """
@@ -216,9 +258,6 @@ class ContrastiveTrainer(Trainer):
 
         query_outputs = model(**query_inputs)
         doc_outputs   = model(**doc_inputs)
-
-        query_outputs = self._extract_tensor(query_outputs, "query_outputs")
-        doc_outputs   = self._extract_tensor(doc_outputs, "doc_outputs")
 
         # === Hard negatives ===
         neg_doc_outputs = None
