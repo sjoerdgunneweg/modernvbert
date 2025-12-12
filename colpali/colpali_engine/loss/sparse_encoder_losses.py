@@ -2,47 +2,17 @@ import torch
 import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 from torch import nn
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Dict, Any
+from colpali_engine.utils.sparse_rep import SparseRep
 
-
-def num_active_terms(a: torch.Tensor, threshold: float = 1e-3) -> torch.Tensor:
-    """
-    Compute the average number of "active" (non-zero) dimensions per example.
-
-    Args:
-        a: Tensor of shape [B, D] (e.g., sparse-ish embedding).
-        threshold: Values above this threshold are considered active.
-
-    Returns:
-        Scalar tensor: mean number of active dimensions over the batch.
-    """
+def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
+    if isinstance(a, SparseRep):
+        return (a.values > threshold).float().sum(dim=1).mean()
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
 
 
 class Regularizer(nn.Module):
-    """
-    Base class for sparse regularizers with warmup scheduling.
-
-    Attributes
-    ----------
-    weight_T : float
-        Target max weight of the regularizer after warmup.
-    T : int
-        Number of steps before reaching full weight (warmup length).
-    t : int
-        Current step.
-    weight_t : float
-        Current effective weight, evolves from 0 to weight_T over T steps.
-    """
-
-    def __init__(self, weight: float = 0.1, T: int = 10000) -> None:
-        """
-        Initialize regularizer with warmup schedule.
-
-        Args:
-            weight: Target regularizer weight when warmup completes.
-            T: Number of steps over which to warm up.
-        """
+    def __init__(self, weight: float = 0.1, T: int = 10000):
         super().__init__()
         self.weight_T = weight
         self.weight_t = 0.0
@@ -50,50 +20,37 @@ class Regularizer(nn.Module):
         self.t = 0
 
     def step(self):
-        """
-        Advance the warmup schedule by one training step.
-
-        The weight starts at 0 and increases quadratically up to weight_T
-        between step 1 and step T. After T, weight_t stays at weight_T.
-        """
         if self.t < self.T:
             self.t += 1
             self.weight_t = self.weight_T * (self.t / self.T) ** 2
 
-    def forward(self, reps: torch.Tensor) -> torch.Tensor:
-        """
-        Placeholder forward definition; must be implemented in subclasses.
+    def forward(self, reps):
+        raise NotImplementedError
 
-        Args:
-            reps: batch representation tensor.
 
-        Returns:
-            Regularization loss term (scalar tensor).
-        """
-        raise NotImplementedError("This is an abstract regularizer only.")
 
 class FLOPs(Regularizer):
-    def forward(self, reps: torch.Tensor) -> torch.Tensor:
-        # softplus(reps) is like a smooth ReLU; summing gives an "activation mass" per example, then we mean over batch and scale by warmup weight.
+    """
+    FLOPS LOSS
+    """
+
+    def forward(self, reps):
+        if isinstance(reps, SparseRep):
+            flops = F.softplus(reps.values).sum() / reps.batch_size()
+            return flops * self.weight_t
+
+        # dense fallback
         return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
 
+
 class L1(Regularizer):
-    def forward(self, reps: torch.Tensor) -> torch.Tensor:
-        l1 = reps.sum(dim=-1).mean()
-        return l1 * self.weight_t 
+    def forward(self, reps):
+        if isinstance(reps, SparseRep):
+            return reps.values.sum() / reps.batch_size() * self.weight_t
+        return reps.sum(dim=-1).mean() * self.weight_t
+
 
 class SparseBiEncoderModule(nn.Module):
-    """
-    Base module for bi-encoder losses, handling buffer indexing and
-    negative filtering hyperparameters.
-
-    Args:
-        max_batch_size: Maximum batch size for the pre-allocated index buffer.
-        temperature: Scaling factor for logits (must be > 0).
-        filter_threshold: Fraction of positive score above which negatives are down-weighted.
-        filter_factor: Multiplicative factor applied to filtered negative scores.
-    """
-
     def __init__(
         self,
         max_batch_size: int = 1024,
@@ -102,85 +59,36 @@ class SparseBiEncoderModule(nn.Module):
         filter_factor: float = 0.5,
     ):
         super().__init__()
-        if temperature <= 0:
-            raise ValueError("Temperature must be strictly positive")
-
         self.temperature = temperature
         self.filter_threshold = filter_threshold
         self.filter_factor = filter_factor
-        self.max_batch_size = max_batch_size
 
-        # Pre-allocate indices for in-batch positives [0, 1, ..., max_batch_size-1].
         self.register_buffer(
             "idx_buffer",
             torch.arange(max_batch_size),
             persistent=False,
         )
 
-    def _get_idx(self, batch_size: int, offset: int, device: torch.device) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Generate index tensors for in-batch cross-entropy.
-
-        Args:
-            batch_size: Number of queries/docs in the batch.
-            offset: Offset to apply for multi-GPU indexing.
-            device: Target device of the indices.
-
-        Returns:
-            Tuple (idx, pos_idx), both of shape [batch_size].
-            - idx: index of queries
-            - pos_idx: index of corresponding positives (taking offset into account)
-        """
-        if batch_size > self.idx_buffer.size(0):
-            raise ValueError(
-                f"Batch size {batch_size} exceeds max_batch_size {self.idx_buffer.size(0)}. "
-                f"Increase max_batch_size in SparseBiEncoderModule."
-            )
-
-        idx = self.idx_buffer[:batch_size].to(device)
+    def _get_idx(self, B: int, offset: int, device):
+        idx = self.idx_buffer[:B].to(device)
         pos_idx = idx + offset
         return idx, pos_idx
 
-    def _filter_high_negatives(self, scores: torch.Tensor, pos_idx: torch.Tensor) -> None:
-        """
-        In-place down-weighting of "too-high" in-batch negative scores.
+    def _filter_high_negatives(self, scores, pos_idx):
+        B = scores.size(0)
+        idx = self.idx_buffer[:B].to(scores.device)
 
-        Args:
-            scores: Tensor[B, B] — in-batch similarity matrix (query x doc).
-            pos_idx: Tensor[B] — positive index for each query.
-
-        Behavior:
-            For each query b, we compute:
-                thresh_b = filter_threshold * pos_scores_b
-            All negatives with scores > thresh_b are multiplied by filter_factor.
-        """
-        batch_size = scores.size(0)
-        idx = self.idx_buffer[:batch_size].to(scores.device)
-
-        # Positive scores for each query in the batch.
-        pos_scores = scores[idx, pos_idx]  # [B]
-
-        # Broadcast threshold over columns: [B, 1] => [B, B].
+        pos_scores = scores[idx, pos_idx]
         thresh = self.filter_threshold * pos_scores.unsqueeze(1)
 
-        # Identify negatives that exceed the threshold.
         mask = scores > thresh
-
-        # Ensure we do NOT touch the diagonal positives.
         mask[idx, pos_idx] = False
 
-        # Down-weight "too high" negatives in-place.
         scores[mask] = scores[mask] * self.filter_factor
 
 
+
 class SparseBiEncoderLoss(SparseBiEncoderModule):
-    """
-    Simple in-batch bi-encoder loss with optional SPLADE-style regularization.
-
-    This corresponds to a standard InfoNCE over the in-batch scores, plus
-    FLOPs-style regularization on queries and docs.
-    """
-
     def __init__(
         self,
         temperature: float = 0.02,
@@ -195,59 +103,47 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
         self.pos_aware_negative_filtering = pos_aware_negative_filtering
         self.ce_loss = CrossEntropyLoss()
 
-        # Avoid using nn.Module instances as default args: create them here if None.
-        self.q_regularizer = q_regularizer or L1(weight=0.1, T=10000) 
-        self.d_regularizer = d_regularizer or L1(weight=0.01, T=10000) 
+        self.q_regularizer = q_regularizer
+        self.d_regularizer = d_regularizer
 
-    def forward(self, query_embeddings: torch.Tensor, doc_embeddings: torch.Tensor, offset: int = 0) -> torch.Tensor:
-        """
-        Compute InfoNCE-style loss for a batch of query/doc embeddings.
 
-        Args:
-            query_embeddings: Tensor[B, D]
-            doc_embeddings:   Tensor[B, D]
-            offset:           Offset for positive indices (for multi-GPU setups).
+    def forward(self, q, d, offset: int = 0):
+      
+        if isinstance(q, SparseRep):
+            scores = q.cross_dot(d)  # [B, B]
+        else:
+            scores = torch.einsum("bd,cd->bc", q, d)
 
-        Returns:
-            Scalar tensor: total loss = CE + q_regularizer + d_regularizer
-        """
-        # Similarity matrix: scores[b, c] = <q_b, d_c>.
-        scores = torch.einsum("bd,cd->bc", query_embeddings, doc_embeddings)
-        batch_size = scores.size(0)
+        B = scores.size(0)
         device = scores.device
 
-        # Indices of queries and their corresponding positives.
-        idx, pos_idx = self._get_idx(batch_size, offset, device)
+        idx, pos_idx = self._get_idx(B, offset, device)
 
-        # Optionally filter out "too strong" in-batch negatives.
         if self.pos_aware_negative_filtering:
             self._filter_high_negatives(scores, pos_idx)
 
-        # Update warmup weights BEFORE applying regularization.
-        if self.q_regularizer is not None:
+        # update regularization warmup
+        if self.q_regularizer:
             self.q_regularizer.step()
-        if self.d_regularizer is not None:
+        if self.d_regularizer:
             self.d_regularizer.step()
 
-        # SPLADE FLOPs regularization terms.
-        reg_q = self.q_regularizer(query_embeddings) if self.q_regularizer is not None else 0.0
-        reg_d = self.d_regularizer(doc_embeddings) if self.d_regularizer is not None else 0.0
+        # compute regularization
+        reg_q = self.q_regularizer(q) if self.q_regularizer else 0
+        reg_d = self.d_regularizer(d) if self.d_regularizer else 0
 
-        # Temperature scaling and cross-entropy.
+        # softmax cross-entropy
         scores = scores / self.temperature
-        ce_loss = self.ce_loss(scores, pos_idx)
+        ce = self.ce_loss(scores, pos_idx)
 
-        total_loss = ce_loss + reg_q + reg_d
-
-        return total_loss
+        return ce + reg_q + reg_d
 
 
 class SparseBiNegativeCELoss(SparseBiEncoderModule):
     """
-    SPLADE-style contrastive loss with hard negatives + in-batch InfoNCE + FLOPs regularization.
+    True SPLADE contrastive objective.
 
-    Output is a dict for logging, but the "loss" entry is a scalar tensor
-    that MUST require grad (we assert it to catch issues early).
+    Supports sparse query & doc reps.
     """
 
     def __init__(
@@ -258,85 +154,94 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         max_batch_size: int = 1024,
         filter_threshold: float = 0.95,
         filter_factor: float = 0.5,
-        q_regularizer: Optional[Regularizer] = None,  # Queries: mild sparsity
-        d_regularizer: Optional[Regularizer] = None,  # Docs: stronger sparsity
+        q_regularizer: Optional[Regularizer] = None,
+        d_regularizer: Optional[Regularizer] = None,
         debug: bool = False,
     ):
         super().__init__(max_batch_size, temperature, filter_threshold, filter_factor)
+
         self.in_batch_term_weight = in_batch_term_weight
         self.pos_aware_negative_filtering = pos_aware_negative_filtering
         self.debug = debug
 
-        # Avoid module instances as default args; create them per-loss instance.
-        self.q_regularizer = q_regularizer or L1(weight=0.1, T=10000)
-        self.d_regularizer = d_regularizer or L1(weight=0.01, T=10000)
+        self.q_regularizer = q_regularizer
+        self.d_regularizer = d_regularizer
 
-        self.in_batch_loss_fn = SparseBiEncoderLoss(
+        self.in_batch_loss = SparseBiEncoderLoss(
             temperature=temperature,
             pos_aware_negative_filtering=pos_aware_negative_filtering,
             max_batch_size=max_batch_size,
-            filter_threshold=filter_threshold,
-            filter_factor=filter_factor,
             q_regularizer=None,
             d_regularizer=None,
         )
 
-    def forward(
-        self,
-        query_embeddings: torch.Tensor,      # [B, D]
-        doc_embeddings: torch.Tensor,        # [B, D] positives
-        neg_doc_embeddings: torch.Tensor,    # [B, N, D] hard negatives
-        offset: int = 0,
-    ) -> Dict[str, Any]:
-        """
-        Compute SPLADE-style loss with hard negatives and in-batch negatives.
+   
+    def forward(self, q, d, neg_d, offset: int = 0):
+        B = q.batch_size() if isinstance(q, SparseRep) else q.size(0)
+        N = neg_d.shape[1]  # [B, N, ...]
 
-        Args:
-            query_embeddings:    Tensor[B, D] query representations.
-            doc_embeddings:      Tensor[B, D] positive documents.
-            neg_doc_embeddings:  Tensor[B, N, D] hard negative documents per query.
-            offset:              Offset for in-batch positive indices (multi-GPU).
+   
+        if isinstance(q, SparseRep):
+            pos_scores = q.element_wise_dot(d)
+        else:
+            pos_scores = (q * d).sum(dim=1)
 
-        Returns:
-            Dict with:
-                "loss": total loss (contrastive + regularization) [scalar tensor]
-                "contrastive_loss": hard_neg + in-batch mixture [scalar tensor]
-        """
+        pos_scores = pos_scores / self.temperature  # [B]
 
-        pos_scores = (query_embeddings * doc_embeddings[offset : offset + neg_doc_embeddings.size(0)]).sum(dim=1)
-        pos_scores /= self.temperature
-        neg_scores = torch.einsum("bd,bnd->bn", query_embeddings, neg_doc_embeddings) / self.temperature
 
+        if isinstance(q, SparseRep):
+
+            neg_flat = SparseRep(
+                indices=neg_d.indices.view(B * N, -1),
+                values=neg_d.values.view(B * N, -1),
+                size=neg_d.size,
+            )
+            neg_scores_full = q.cross_dot(neg_flat)  # [B, B*N]
+            neg_scores = neg_scores_full.view(B, N)
+        else:
+            neg_scores = torch.einsum("bd,bnd->bn", q, neg_d)
+
+        neg_scores = neg_scores / self.temperature  # [B, N]
+
+ 
         hard_neg_loss = F.softplus(neg_scores - pos_scores.unsqueeze(1)).mean()
 
-        # === In-batch InfoNCE ===
+
         if self.in_batch_term_weight > 0:
-            in_batch_loss = self.in_batch_loss_fn(query_embeddings, doc_embeddings, offset)
+            in_batch = self.in_batch_loss(q, d, offset)
             contrastive_loss = (
-                hard_neg_loss * (1.0 - self.in_batch_term_weight)
-                + in_batch_loss * self.in_batch_term_weight
+                hard_neg_loss * (1 - self.in_batch_term_weight)
+                + in_batch * self.in_batch_term_weight
             )
         else:
             contrastive_loss = hard_neg_loss
 
-        # === SPLADE FLOPs regularization ===
-        if self.q_regularizer is not None:
+
+        if self.q_regularizer:
             self.q_regularizer.step()
-        if self.d_regularizer is not None:
+        if self.d_regularizer:
             self.d_regularizer.step()
 
-        reg_q = self.q_regularizer(query_embeddings) if self.q_regularizer is not None else 0.0
+        reg_q = self.q_regularizer(q) if self.q_regularizer else 0
 
-        # Apply document regularizer to both positives and negatives.
-        docs_all = torch.cat([doc_embeddings, neg_doc_embeddings.flatten(0, 1)], dim=0)  # [B + B*N, D]
-        reg_d = self.d_regularizer(docs_all) if self.d_regularizer is not None else 0.0
-        total_loss = contrastive_loss + reg_q + reg_d
+        if isinstance(neg_d, SparseRep):
+            docs_all = SparseRep(
+                indices=torch.cat([d.indices, neg_d.indices.view(B * N, -1)], dim=0),
+                values=torch.cat([d.values, neg_d.values.view(B * N, -1)], dim=0),
+                size=d.size,
+            )
+        else:
+            docs_all = torch.cat([d, neg_d.reshape(B * N, -1)], dim=0)
+
+        reg_d = self.d_regularizer(docs_all) if self.d_regularizer else 0
+
+        total = contrastive_loss + reg_q + reg_d
 
         return {
-            "loss": total_loss,
+            "loss": total,
             "contrastive_loss": contrastive_loss,
             "reg_q": reg_q,
             "reg_d": reg_d,
-            "query_length": num_active_terms(query_embeddings),
-            "doc_length": num_active_terms(doc_embeddings),
+            "query_length": num_active_terms(q),
+            "doc_length": num_active_terms(d),
         }

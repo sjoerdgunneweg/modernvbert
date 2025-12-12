@@ -1,246 +1,154 @@
+"""Implementation ò sparse representation"""
 import torch
-import torch.nn.functional as F
-from torch.nn import CrossEntropyLoss
-from torch import nn
-from typing import Optional, Dict, Any
-
-def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
-    if isinstance(a, SparseRep):
-        return (a.values > threshold).float().sum(dim=1).mean()
-    return (F.relu(a) > threshold).float().sum(dim=1).mean()
+from torch.nn.utils.rnn import pad_sequence
 
 
-class Regularizer(nn.Module):
-    def __init__(self, weight: float = 0.1, T: int = 10000):
-        super().__init__()
-        self.weight_T = weight
-        self.weight_t = 0.0
-        self.T = T
-        self.t = 0
+class SparseRep:
+    """Sparse representation which could be easily converted to dense or sparse format"""
 
-    def step(self):
-        if self.t < self.T:
-            self.t += 1
-            self.weight_t = self.weight_T * (self.t / self.T) ** 2
+    DENSE_FORMAT = "dense"
+    SPARSE_FORMAT = "sparse"
 
-    def forward(self, reps):
-        raise NotImplementedError
-
-
-
-class FLOPs(Regularizer):
-    """
-    FLOPS LOSS
-    """
-
-    def forward(self, reps):
-        if isinstance(reps, SparseRep):
-            flops = F.softplus(reps.values).sum() / reps.batch_size()
-            return flops * self.weight_t
-
-        # dense fallback
-        return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
-
-
-class L1(Regularizer):
-    def forward(self, reps):
-        if isinstance(reps, SparseRep):
-            return reps.values.sum() / reps.batch_size() * self.weight_t
-        return reps.sum(dim=-1).mean() * self.weight_t
-
-
-class SparseBiEncoderModule(nn.Module):
-    def __init__(
-        self,
-        max_batch_size: int = 1024,
-        temperature: float = 0.02,
-        filter_threshold: float = 0.95,
-        filter_factor: float = 0.5,
-    ):
-        super().__init__()
-        self.temperature = temperature
-        self.filter_threshold = filter_threshold
-        self.filter_factor = filter_factor
-
-        self.register_buffer(
-            "idx_buffer",
-            torch.arange(max_batch_size),
-            persistent=False,
+    def __init__(self, indices=None, values=None, size=None, dense=None) -> None:
+        assert dense is not None or (
+            indices is not None and values is not None and size is not None
         )
-
-    def _get_idx(self, B: int, offset: int, device):
-        idx = self.idx_buffer[:B].to(device)
-        pos_idx = idx + offset
-        return idx, pos_idx
-
-    def _filter_high_negatives(self, scores, pos_idx):
-        B = scores.size(0)
-        idx = self.idx_buffer[:B].to(scores.device)
-
-        pos_scores = scores[idx, pos_idx]
-        thresh = self.filter_threshold * pos_scores.unsqueeze(1)
-
-        mask = scores > thresh
-        mask[idx, pos_idx] = False
-
-        scores[mask] = scores[mask] * self.filter_factor
-
-
-
-class SparseBiEncoderLoss(SparseBiEncoderModule):
-    def __init__(
-        self,
-        temperature: float = 0.02,
-        pos_aware_negative_filtering: bool = False,
-        max_batch_size: int = 1024,
-        filter_threshold: float = 0.95,
-        filter_factor: float = 0.5,
-        q_regularizer: Optional[Regularizer] = None,
-        d_regularizer: Optional[Regularizer] = None,
-    ):
-        super().__init__(max_batch_size, temperature, filter_threshold, filter_factor)
-        self.pos_aware_negative_filtering = pos_aware_negative_filtering
-        self.ce_loss = CrossEntropyLoss()
-
-        self.q_regularizer = q_regularizer
-        self.d_regularizer = d_regularizer
-
-
-    def forward(self, q, d, offset: int = 0):
-      
-        if isinstance(q, SparseRep):
-            scores = q.cross_dot(d)  # [B, B]
+        if dense is not None:
+            self.dense = dense
+            self.format = SparseRep.DENSE_FORMAT
+            self.device = dense.device
         else:
-            scores = torch.einsum("bd,cd->bc", q, d)
+            self.indices = indices
+            self.values = values
+            self.device = self.values.device
+            if size.dim() == 3:
+                self.size = torch.tensor(
+                    (size[:, 0].sum(), size[0][1]), device=self.device
+                )
+            else:
+                self.size = size
+            self.format = SparseRep.SPARSE_FORMAT
 
-        B = scores.size(0)
-        device = scores.device
-
-        idx, pos_idx = self._get_idx(B, offset, device)
-
-        if self.pos_aware_negative_filtering:
-            self._filter_high_negatives(scores, pos_idx)
-
-        # update regularization warmup
-        if self.q_regularizer:
-            self.q_regularizer.step()
-        if self.d_regularizer:
-            self.d_regularizer.step()
-
-        # compute regularization
-        reg_q = self.q_regularizer(q) if self.q_regularizer else 0
-        reg_d = self.d_regularizer(d) if self.d_regularizer else 0
-
-        # softmax cross-entropy
-        scores = scores / self.temperature
-        ce = self.ce_loss(scores, pos_idx)
-
-        return ce + reg_q + reg_d
-
-
-class SparseBiNegativeCELoss(SparseBiEncoderModule):
-    """
-    True SPLADE contrastive objective.
-
-    Supports sparse query & doc reps.
-    """
-
-    def __init__(
-        self,
-        temperature: float = 0.02,
-        in_batch_term_weight: float = 0.5,
-        pos_aware_negative_filtering: bool = False,
-        max_batch_size: int = 1024,
-        filter_threshold: float = 0.95,
-        filter_factor: float = 0.5,
-        q_regularizer: Optional[Regularizer] = None,
-        d_regularizer: Optional[Regularizer] = None,
-        debug: bool = False,
-    ):
-        super().__init__(max_batch_size, temperature, filter_threshold, filter_factor)
-
-        self.in_batch_term_weight = in_batch_term_weight
-        self.pos_aware_negative_filtering = pos_aware_negative_filtering
-        self.debug = debug
-
-        self.q_regularizer = q_regularizer
-        self.d_regularizer = d_regularizer
-
-        self.in_batch_loss = SparseBiEncoderLoss(
-            temperature=temperature,
-            pos_aware_negative_filtering=pos_aware_negative_filtering,
-            max_batch_size=max_batch_size,
-            q_regularizer=None,
-            d_regularizer=None,
-        )
-
-   
-    def forward(self, q, d, neg_d, offset: int = 0):
-        B = q.batch_size() if isinstance(q, SparseRep) else q.size(0)
-        N = neg_d.shape[1]  # [B, N, ...]
-
-   
-        if isinstance(q, SparseRep):
-            pos_scores = q.element_wise_dot(d)
+    def to_dict(self):
+        "return a dictionary of data"
+        if self.format == SparseRep.SPARSE_FORMAT:
+            return {
+                "indices": self.indices,
+                "values": self.values,
+                "size": self.size.unsqueeze(0),
+            }
         else:
-            pos_scores = (q * d).sum(dim=1)
+            return {"dense": self.dense}
 
-        pos_scores = pos_scores / self.temperature  # [B]
-
-
-        if isinstance(q, SparseRep):
-
-            neg_flat = SparseRep(
-                indices=neg_d.indices.view(B * N, -1),
-                values=neg_d.values.view(B * N, -1),
-                size=neg_d.size,
-            )
-            neg_scores_full = q.cross_dot(neg_flat)  # [B, B*N]
-            neg_scores = neg_scores_full.view(B, N)
+    def batch_size(self):
+        """Return number of examples in batch"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            return self.dense.size(0)
         else:
-            neg_scores = torch.einsum("bd,bnd->bn", q, neg_d)
+            return self.indices.size(0)
 
-        neg_scores = neg_scores / self.temperature  # [B, N]
-
- 
-        hard_neg_loss = F.softplus(neg_scores - pos_scores.unsqueeze(1)).mean()
-
-
-        if self.in_batch_term_weight > 0:
-            in_batch = self.in_batch_loss(q, d, offset)
-            contrastive_loss = (
-                hard_neg_loss * (1 - self.in_batch_term_weight)
-                + in_batch * self.in_batch_term_weight
-            )
+    def len(self):
+        """Return mean length of sparse vectors"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            return (self.dense > 0).sum(dim=1).float().mean()
         else:
-            contrastive_loss = hard_neg_loss
+            return (self.values > 0).sum(dim=1).float().mean()
 
-
-        if self.q_regularizer:
-            self.q_regularizer.step()
-        if self.d_regularizer:
-            self.d_regularizer.step()
-
-        reg_q = self.q_regularizer(q) if self.q_regularizer else 0
-
-        if isinstance(neg_d, SparseRep):
-            docs_all = SparseRep(
-                indices=torch.cat([d.indices, neg_d.indices.view(B * N, -1)], dim=0),
-                values=torch.cat([d.values, neg_d.values.view(B * N, -1)], dim=0),
-                size=d.size,
-            )
+    def repeat_interleave(self, n, dim=0):
+        """Repeat along some dimension"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            new_dense = self.dense.repeat_interleave(n, dim=dim)
+            return SparseRep(dense=new_dense)
         else:
-            docs_all = torch.cat([d, neg_d.reshape(B * N, -1)], dim=0)
+            new_indices = self.indices.repeat_interleave(n, dim=dim)
+            new_values = self.values.repeat_interleave(n, dim=dim)
+            return SparseRep(indices=new_indices, values=new_values, size=self.size)
 
-        reg_d = self.d_regularizer(docs_all) if self.d_regularizer else 0
+    def to_dense(self, reduce="amax"):
+        """convert sparse reps to dense reps"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            return self.dense
+        elif self.format == SparseRep.SPARSE_FORMAT:
+            dense = torch.zeros(
+                self.size.tolist(), device=self.indices.device, dtype=self.values.dtype
+            ).scatter_reduce_(1, self.indices, self.values, reduce=reduce)
+            return dense
+        else:
+            raise Exception(f"sparse format {self.format} is not available")
 
-        total = contrastive_loss + reg_q + reg_d
+    def to_sparse(self):
+        """return sparse reps in tuple of (indices,values, size)"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            indices = []
+            values = []
+            for row in self.dense:
+                indices.append(row.nonzero(as_tuple=True)[0])
+                values.append(row[indices[-1]])
+            indices = pad_sequence(indices, batch_first=True, padding_value=0)
+            values = pad_sequence(values, batch_first=True, padding_value=0)
+            size = self.dense.size()
+            return (indices, values, size)
+        elif self.format == SparseRep.SPARSE_FORMAT:
+            return (self.indices, self.values, self.size())
+        else:
+            raise Exception(f"sparse format {self.format} is not available")
 
-        return {
-            "loss": total,
-            "contrastive_loss": contrastive_loss,
-            "reg_q": reg_q,
-            "reg_d": reg_d,
-            "query_length": num_active_terms(q),
-            "doc_length": num_active_terms(d),
-        }
+    def element_wise_dot(self, second):
+        """return dot(first[i], second[i]) for all i in range(batch_size)"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            if second.format == SparseRep.DENSE_FORMAT:
+                return (self.dense * second.dense).sum(dim=1)
+            else:
+                raise Exception(
+                    "Dot product between {self.format} and {second.format} is not supported"
+                )
+        elif self.format == SparseRep.SPARSE_FORMAT:
+            if second.format == SparseRep.DENSE_FORMAT:
+                selected_vals = second.dense.gather(1, self.indices)
+                return (self.values * selected_vals).sum(dim=1)
+            else:
+                # some redundency, but more efficient
+                exact_match = self.indices.unsqueeze(-1) == second.indices.unsqueeze(
+                    -2
+                )  # BATCH_SIZE x FIRST_LENGTH x SECOND_LENGTH
+                score_mat = self.values.unsqueeze(-1) * second.values.unsqueeze(-2)
+                score_mat = score_mat * exact_match
+                return score_mat.max(dim=-1).values.sum(dim=-1)
+        else:
+            raise Exception(f"sparse format {self.format} is not available")
+
+    def cross_dot(self, second):
+        """return dot(first[i], second[j]) for all i,j"""
+        if self.format == SparseRep.DENSE_FORMAT:
+            if second.format == SparseRep.DENSE_FORMAT:
+                return torch.mm(self.dense, second.dense.transpose(0, 1))
+            else:
+                raise Exception(
+                    "Dot product between {self.format} and {second.format} is not supported"
+                )
+        elif self.format == SparseRep.SPARSE_FORMAT:
+            if second.format == SparseRep.DENSE_FORMAT:
+                # some redundency, but more efficient
+                ids = self.indices.view(1, -1).expand(
+                    second.dense.size(0), -1
+                )  # B_SIZE x A_SIZE x SEQ_LENGTH
+                selected_vals = second.dense.gather(1, ids)
+                selected_vals = selected_vals.view(
+                    second.dense.size(0), self.indices.size(0), self.indices.size(1)
+                ).permute(
+                    1, 2, 0
+                )  # A_SIZE x B_SIZE X SEQ_LENGTH
+                score_mat = self.values.unsqueeze(-2).bmm(selected_vals)
+                return score_mat.squeeze(1)
+            else:
+                exact_match = (
+                    self.indices.unsqueeze(1).unsqueeze(-1)
+                    == second.indices.unsqueeze(0).unsqueeze(-2)
+                ).float()
+                score_mat = self.values.unsqueeze(1).unsqueeze(
+                    -1
+                ) * second.values.unsqueeze(0).unsqueeze(-2)
+                score_mat = score_mat * exact_match
+                return score_mat.max(dim=-1).values.sum(dim=-1)
+        else:
+            raise Exception(f"sparse format {self.format} is not available")
