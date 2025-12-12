@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --job-name=contrastive_vbert_m2
-#SBATCH --time=60:00:00
+#SBATCH --time=01:00:00
 #SBATCH --output=output/%x_%j.out
 #SBATCH --error=output/%x_%j.err
 
@@ -26,7 +26,6 @@ export HF_DATASETS_CACHE=$HF_HOME
 
 export WANDB_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
 export WANDB_PROJECT=vbert_m2
-export WANDB_ENTITY=your_username_or_team
 export WANDB_LOG_MODEL=false
 export WANDB_RUN_GROUP=colmodernvbert-m2
 export WANDB_NAME=contrastive_${SLURM_JOB_ID}
