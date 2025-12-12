@@ -32,12 +32,12 @@ config:
     filter_factor: 0.5
 
     q_regularizer:
-      (): colpali_engine.loss.sparse_encoder_losses.L1
+      (): colpali_engine.loss.sparse_encoder_losses.FLOPs
       weight: 0.1
       T: 10000
 
     d_regularizer:
-      (): colpali_engine.loss.sparse_encoder_losses.L1
+      (): colpali_engine.loss.sparse_encoder_losses.FLOPs
       weight: 0.01
       T: 10000
 
