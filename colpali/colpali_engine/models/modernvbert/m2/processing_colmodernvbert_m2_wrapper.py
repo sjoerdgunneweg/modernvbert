@@ -37,3 +37,23 @@ class ColModernVBertM2Processor(BaseVisualRetrieverProcessor, Idefics3Processor)
         ps → list of SparseReps or dense vectors from doc_encoder
         """
         return self.doc_processor.score(qs, ps, device=device)
+
+    def process_images(self, images: List[Image.Image]) -> BatchEncoding:
+        return self.doc_processor.process_images(images)
+
+    def process_texts(self, texts: List[str]) -> BatchEncoding:
+        return self.query_processor.process_texts(texts)
+
+    def get_n_patches(self, *args, **kwargs):
+        return self.doc_processor.get_n_patches(*args, **kwargs)
+
+    def get_query_len(self):
+
+        if hasattr(self.query_processor, "get_query_len"):
+            return self.query_processor.get_query_len()
+        raise NotImplementedError
+
+    def get_doc_len(self):
+        if hasattr(self.doc_processor, "get_doc_len"):
+            return self.doc_processor.get_doc_len()
+        raise NotImplementedError
