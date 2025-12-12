@@ -300,24 +300,64 @@ class ContrastiveTrainer(Trainer):
         result = {"loss": final_loss, **final_logs}
         return result["loss"] if not return_outputs else (result["loss"], result)
 
-
     def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=True):
-        """This function is used to generate predictions and return the loss for the given inputs."""
         if not prediction_loss_only:
             raise ValueError("prediction_step is only called with prediction_loss_only=True")
 
+        # Make sure the loss module behaves like eval (it is not part of model)
+        was_training = self.loss_func.training
+        self.loss_func.eval()
+
         with torch.no_grad():
-            # feed only kwargs with 'doc_' prefix
-            doc_outputs = model(**{k[4:]: v for k, v in inputs.items() if k.startswith("doc")})
-            query_outputs = model(input_ids=inputs["query_input_ids"], attention_mask=inputs["query_attention_mask"])
+            # build inputs using prefixes (consistent with compute_loss)
+            query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
+            doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
 
+            query_outputs = model(**query_inputs)
+            doc_outputs   = model(**doc_inputs)
+
+            neg_doc_outputs = None
             if "neg_doc_input_ids" in inputs:
-                neg_doc_outputs = model(**{k[8:]: v for k, v in inputs.items() if k.startswith("neg_doc")})
-                loss = self.loss_func(query_outputs, doc_outputs, neg_doc_outputs)
-                return loss, None, None
+                num_negs = inputs["neg_doc_input_ids"].size(1)
+                neg_doc_inputs = self._reshape_neg_doc_inputs(inputs)
+                neg_doc_outputs = model(**neg_doc_inputs)
+                neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
 
-            loss = self.loss_func(query_outputs, doc_outputs)
-            return loss, None, None
+            loss = self.loss_func(
+                query_embeddings=query_outputs,
+                doc_embeddings=doc_outputs,
+                neg_doc_embeddings=neg_doc_outputs,
+                offset=0,
+            )
+
+            # HF expects a scalar tensor here
+            if isinstance(loss, dict):
+                loss = loss["loss"]
+
+        # restore train/eval state
+        if was_training:
+            self.loss_func.train()
+
+        return loss, None, None
+
+
+    # def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=True):
+    #     """This function is used to generate predictions and return the loss for the given inputs."""
+    #     if not prediction_loss_only:
+    #         raise ValueError("prediction_step is only called with prediction_loss_only=True")
+
+    #     with torch.no_grad():
+    #         # feed only kwargs with 'doc_' prefix
+    #         doc_outputs = model(**{k[4:]: v for k, v in inputs.items() if k.startswith("doc")})
+    #         query_outputs = model(input_ids=inputs["query_input_ids"], attention_mask=inputs["query_attention_mask"])
+
+    #         if "neg_doc_input_ids" in inputs:
+    #             neg_doc_outputs = model(**{k[8:]: v for k, v in inputs.items() if k.startswith("neg_doc")})
+    #             loss = self.loss_func(query_outputs, doc_outputs, neg_doc_outputs)
+    #             return loss, None, None
+
+    #         loss = self.loss_func(query_outputs, doc_outputs)
+    #         return loss, None, None
 
     # def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=None):
     #     if not prediction_loss_only:
