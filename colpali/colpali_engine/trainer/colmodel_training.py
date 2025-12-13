@@ -68,6 +68,9 @@ class ColModelTrainingConfig:
             else:
                 print(f"Adapter already loaded from {self.pretrained_peft_model_name_or_path}. Not overwriting.")
 
+        if hasattr(self.model, "gradient_checkpointing_disable"):
+            self.model.gradient_checkpointing_disable()
+
     print_gpu_utilization()
 
 
