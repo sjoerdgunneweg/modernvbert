@@ -36,13 +36,13 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
 
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
-            mask = kwargs["attention_mask"].unsqueeze(-1).to(token_weights.dtype)  # (B, L, 1)
+            mask = kwargs["attention_mask"].to(token_weights.dtype)  # (B, L)
             token_weights = token_weights * mask
 
         # keep only image tokens (if multimodal and specified):
         if self.mask_non_image_embeddings and "pixel_values" in kwargs and "input_ids" in kwargs:
             # assuming config.image_token_id is the special token marking image features
-            image_mask = (kwargs["input_ids"] == self.config.image_token_id).unsqueeze(-1)  # (B, L, 1)
+            image_mask = (kwargs["input_ids"] == self.config.image_token_id)  # (B, L)
             image_mask = image_mask.to(token_weights.dtype)
             token_weights = token_weights * image_mask
 
