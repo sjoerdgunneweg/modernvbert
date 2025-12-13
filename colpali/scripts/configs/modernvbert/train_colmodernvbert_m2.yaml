@@ -48,9 +48,12 @@ config:
     num_train_epochs: 3
     per_device_train_batch_size: 8
     per_device_eval_batch_size: 8
-    ddp_find_unused_parameters: false
+
+    ddp_find_unused_parameters: true
+
     gradient_checkpointing: false
     gradient_checkpointing_kwargs: { "use_reentrant": false }
+
     bf16: true
     eval_strategy: "steps"
     dataloader_num_workers: 2
