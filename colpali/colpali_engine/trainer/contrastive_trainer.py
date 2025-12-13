@@ -57,6 +57,11 @@ class ContrastiveTrainer(Trainer):
         self.query_prefix = "query_"
         self.pos_prefix   = "doc_"
         self.neg_prefix   = "neg_doc_"
+        if torch.distributed.is_initialized():
+            try:
+                self.accelerator.unwrap_model(self.model)._set_static_graph()
+            except Exception:
+                pass
 
         
 
