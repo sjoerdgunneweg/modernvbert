@@ -1,6 +1,6 @@
 import torch
 from colpali_engine.models.modernvbert.modeling_modernvbert import ModernVBertForMaskedLM
-from colpali_engine.models import SparseModernVBertM2, SparseModernVBERTM2Processor
+from colpali_engine.models import SparseModernVBertM2, SparseModernVBertM2Processor
 from colpali_engine.models.modernvbert.configuration_modernvbert import ModernVBertConfig
 # Import your custom class
 
@@ -40,5 +40,5 @@ print(f"Saving canonical checkpoint to {save_path}...")
 model.save_pretrained(save_path)
 
 # load and save processor:
-SparseModernVBERTM2Processor.from_pretrained(base_ckpt).save_pretrained(save_path)
+SparseModernVBERTM2Processor
 print("Done!")
