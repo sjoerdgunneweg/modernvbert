@@ -28,7 +28,9 @@ export WANDB_PROJECT=vbert_m2
 export WANDB_RUN_GROUP=colmodernvbert-m2
 
 
-srun python colpali/scripts/train/train_colbert.py \
+srun torchrun \
+  --nproc_per_node=2 \
+  colpali/scripts/train/train_colbert.py \
   colpali/scripts/configs/modernvbert/train_colmodernvbert_m2.yaml
 
 echo "Training completed at $(date)"
