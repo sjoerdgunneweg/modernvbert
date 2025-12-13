@@ -8,14 +8,14 @@ from colpali_engine.utils.sparse_rep import SparseRep
 
 
 def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
-    """
-    Average number of active (non-zero) dimensions per example.
-    Works for SparseRep or dense tensors.
-    """
     if isinstance(a, SparseRep):
-        return (a.values > threshold).float().sum(dim=1).mean()
-    return (F.relu(a) > threshold).float().sum(dim=1).mean()
+        if a.values is not None:
+            return (a.values > threshold).float().sum(dim=1).mean()
+        else:
+            # SPLADE / dense vocab
+            return (a.dense > threshold).float().sum(dim=1).mean()
 
+    return (F.relu(a) > threshold).float().sum(dim=1).mean()
 
 class Regularizer(nn.Module):
     def __init__(self, weight: float = 0.1, T: int = 10000):
@@ -35,17 +35,16 @@ class Regularizer(nn.Module):
 
 
 class FLOPs(Regularizer):
-    """
-    FLOPs-style sparsity regularizer, à la SPLADE.
-    """
-
     def forward(self, reps):
         if isinstance(reps, SparseRep):
-            # reps.values: [B, L] (non-zero term weights)
-            flops = F.softplus(reps.values).sum() / reps.batch_size()
+            if reps.values is not None:
+                x = reps.values      
+            else:
+                x = reps.dense      
+
+            flops = F.softplus(x).sum() / reps.batch_size()
             return flops * self.weight_t
 
-        # dense fallback
         return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
 
 
