@@ -30,7 +30,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    accelerator = Accelerator()
+    accelerator = Accelerator(static_graph=True)
     args = parse_args()
 
     cfg = load_config(args.config_file)
