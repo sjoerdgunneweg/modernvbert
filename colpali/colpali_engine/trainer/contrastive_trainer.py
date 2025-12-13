@@ -166,6 +166,7 @@ class ContrastiveTrainer(Trainer):
         neg_target_outputs=None,
     ):
         offset = 0
+        gathered = False
 
         # batch size
         if isinstance(query_outputs, SparseRep):
@@ -173,12 +174,15 @@ class ContrastiveTrainer(Trainer):
         else:
             batch_size = query_outputs.size(0)
 
-        if self.accelerator.num_processes > 1 and self.accelerator.sync_gradients:
+        if self.accelerator.num_processes > 1:
             if isinstance(pos_target_outputs, SparseRep):
                 pos_target_outputs = gather_sparserep(pos_target_outputs)
+                gathered = True
             else:
                 pos_target_outputs = concat_all_gather(pos_target_outputs)
+                gathered = True
 
+        if gathered:
             offset = self.accelerator.process_index * batch_size
 
         if neg_target_outputs is not None:
@@ -196,7 +200,7 @@ class ContrastiveTrainer(Trainer):
             )
 
         return loss if isinstance(loss, dict) else {"loss": loss}
-        
+ 
     # def _compute_loss_from_outputs(
     #         self,
     #         query_outputs,
