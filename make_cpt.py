@@ -40,5 +40,5 @@ print(f"Saving canonical checkpoint to {save_path}...")
 model.save_pretrained(save_path)
 
 # load and save processor:
-SparseModernVBERTM2Processor
+SparseModernVBertM2Processor.from_pretrained(base_ckpt).save_pretrained(save_path)
 print("Done!")
