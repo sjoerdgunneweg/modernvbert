@@ -9,14 +9,12 @@ from colpali_engine.utils.sparse_rep import SparseRep
 
 def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
     if isinstance(a, SparseRep):
-        if a.values is not None:
+        if hasattr(a, "values") and a.values is not None:
             return (a.values > threshold).float().sum(dim=1).mean()
         else:
-            # SPLADE / dense vocab
             return (a.dense > threshold).float().sum(dim=1).mean()
 
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
-
 class Regularizer(nn.Module):
     def __init__(self, weight: float = 0.1, T: int = 10000):
         super().__init__()
@@ -37,24 +35,23 @@ class Regularizer(nn.Module):
 class FLOPs(Regularizer):
     def forward(self, reps):
         if isinstance(reps, SparseRep):
-            if reps.values is not None:
-                x = reps.values      
+            if hasattr(reps, "values") and reps.values is not None:
+                x = reps.values          # MLP / EPIC
             else:
-                x = reps.dense      
+                x = reps.dense           # SPLADE / MLM
 
             flops = F.softplus(x).sum() / reps.batch_size()
             return flops * self.weight_t
 
         return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
 
-
 class L1(Regularizer):
     def forward(self, reps):
         if isinstance(reps, SparseRep):
-            x = reps.values if reps.values is not None else reps.dense
+            x = reps.values if hasattr(reps, "values") and reps.values is not None else reps.dense
             return x.sum() / reps.batch_size() * self.weight_t
-        return reps.sum(dim=-1).mean() * self.weight_t
 
+        return reps.sum(dim=-1).mean() * self.weight_t
 
 
 class SparseBiEncoderModule(nn.Module):
