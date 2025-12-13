@@ -85,4 +85,4 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
         logits = torch.log1p(torch.relu(logits))  # (B, L, V)
         # Max-pool over sequence dimension → [B, V]
         lex_weights = self.max_pool(logits)  # (B, V)
-        return SparseRep(dense=lex_weights)
+        return SparseRep(dense=lex_weights).to_dense()

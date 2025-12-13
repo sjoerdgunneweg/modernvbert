@@ -52,4 +52,4 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
         size = torch.tensor((token_weights.size(0), self.vocab_size), device=token_weights.device)
 
 
-        return SparseRep(indices=kwargs["input_ids"], values=token_weights, size=size)
+        return SparseRep(indices=kwargs["input_ids"], values=token_weights, size=size).to_dense()

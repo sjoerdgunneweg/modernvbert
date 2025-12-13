@@ -66,10 +66,6 @@ class SparseModernVBertMLPProcessor(ColModernVBertProcessor):
         **kwargs,
     ) -> torch.Tensor:
 
-        # Convert SparseRep to dense tensors
-        qs = [q.to_dense() for q in qs]
-        ps = [p.to_dense() for p in ps]
-
         return self.score_single_vector(qs, ps, device=device)
 
     def get_query_len(self) -> int:
