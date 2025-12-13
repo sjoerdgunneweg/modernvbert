@@ -269,15 +269,19 @@ class ContrastiveTrainer(Trainer):
         query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
         doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
 
-        query_outputs = model(**query_inputs)
-        doc_outputs   = model(**doc_inputs)
+        with model.no_sync():
+            query_outputs = model(**query_inputs)
+
+        doc_outputs = model(**doc_inputs)
+
 
         # === Hard negatives ===
         neg_doc_outputs = None
         if "neg_doc_input_ids" in inputs:
             num_negs = inputs["neg_doc_input_ids"].size(1)
             neg_doc_inputs = self._reshape_neg_doc_inputs(inputs)
-            neg_doc_outputs = model(**neg_doc_inputs)
+            with model.no_sync():
+                neg_doc_outputs = model(**neg_doc_inputs)
             neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
 
         # === Main loss: query → doc ===
