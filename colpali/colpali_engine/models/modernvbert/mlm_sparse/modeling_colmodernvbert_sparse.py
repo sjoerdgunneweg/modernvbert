@@ -84,23 +84,10 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
 
        
         if self.mask_non_image_embeddings and pixel_values is not None and input_ids is not None:
-            # assuming config.image_token_id is the special token marking image features
             image_mask = (input_ids == self.config.image_token_id).unsqueeze(-1)  # (B, L, 1)
             image_mask = image_mask.to(token_scores.dtype)
             token_scores = token_scores * image_mask
 
-        # Max-pool over vocab dimension to get per-token scores
-        # token_scores: (B, L, V) -> (B, L) by taking max over V
-        token_scores = torch.max(token_scores, dim=-1).values  # (B, L)
+        lex_weights = torch.max(token_scores, dim=1).values # (B, V)
 
-        vocab_size = self.splade_head.out_features
-        size = torch.tensor(
-            [token_scores.size(0), vocab_size],
-            device=token_scores.device,
-        )
-
-        return SparseRep(
-            indices=input_ids,     # (B, L)
-            values=token_scores,   # (B, L)
-            size=size,             # [batch, vocab]
-        )
+        return SparseRep(dense=lex_weights)
