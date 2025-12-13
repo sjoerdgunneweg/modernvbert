@@ -1,5 +1,5 @@
 model_args:
-  model_name_or_path: ModernVBERT/modernvbert
+  model_name_or_path: /home/scur1709/modernvbert/models/sparsemodernvbert_initialization
   model_type: SparseModernVBertM2
   loss_type: SparseBiNegativeCELoss
   loading_kwargs:
