@@ -51,8 +51,10 @@ class FLOPs(Regularizer):
 class L1(Regularizer):
     def forward(self, reps):
         if isinstance(reps, SparseRep):
-            return reps.values.sum() / reps.batch_size() * self.weight_t
+            x = reps.values if reps.values is not None else reps.dense
+            return x.sum() / reps.batch_size() * self.weight_t
         return reps.sum(dim=-1).mean() * self.weight_t
+
 
 
 class SparseBiEncoderModule(nn.Module):
