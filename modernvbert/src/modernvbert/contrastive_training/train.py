@@ -30,7 +30,9 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    accelerator = Accelerator(static_graph=True)
+    import os
+    os.environ["ACCELERATE_USE_STATIC_GRAPH"] = "true"
+    accelerator = Accelerator()
     args = parse_args()
 
     cfg = load_config(args.config_file)
