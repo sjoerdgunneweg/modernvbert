@@ -314,5 +314,4 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         # HF Trainer compatibility
         if self.training:
             return out
-        else:
-            return total
+        return total
