@@ -58,7 +58,7 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, pixel_values=pixel_values, **kwargs)
         logits = outputs[0]  # (B, L, V)
 
-        token_scores = torch.log1p(torch.softplus(logits))  # (B, L, V)
+        token_scores = torch.log1p(F.softplus(logits))  # (B, L, V)
 
         # Mask out padding tokens
         if attention_mask is not None:
