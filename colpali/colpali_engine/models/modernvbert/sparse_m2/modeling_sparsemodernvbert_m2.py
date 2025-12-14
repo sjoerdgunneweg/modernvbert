@@ -21,7 +21,11 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
 
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
+        vision_out = self.vision_encoder(*args, **kwargs)
+        text_out = self.text_encoder(*args, **kwargs)
+
+
         if "pixel_values" in kwargs or "image_hidden_states" in kwargs:
-            return self.vision_encoder(*args, **kwargs)
+            return vision_out
         else:
-            return self.text_encoder(*args, **kwargs)
+            return text_out
