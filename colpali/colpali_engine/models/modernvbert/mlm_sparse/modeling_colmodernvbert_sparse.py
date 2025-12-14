@@ -58,7 +58,7 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, pixel_values=pixel_values, **kwargs)
         logits = outputs[0]  # (B, L, V)
 
-        token_scores = torch.log1p(torch.relu(logits))  # (B, L, V)
+        token_scores = torch.log1p(torch.softplus(logits))  # (B, L, V)
 
         # Mask out padding tokens
         if attention_mask is not None:
@@ -78,5 +78,6 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
             token_scores = token_scores * image_mask
 
         lex_weights = torch.max(token_scores, dim=1).values  # (B, V)
+        lex_weights = lex_weights.clamp(min=1e-6)
 
         return SparseRep(dense=lex_weights)
