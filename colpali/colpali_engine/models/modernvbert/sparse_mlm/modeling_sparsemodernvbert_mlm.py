@@ -67,7 +67,8 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
                           external normalization).
         """
         output = self.model(*args, **kwargs)
-        logits = output[0]  # (B, L, V)
+        logits = output[0]  # (B, L, V+additional_vocab_size)
+        logits = logits[:, :, : self.model.config.text_config.vocab_size]  # (B, L, V)
 
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
