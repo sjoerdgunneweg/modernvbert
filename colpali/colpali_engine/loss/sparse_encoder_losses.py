@@ -8,14 +8,11 @@ from colpali_engine.utils.sparse_rep import SparseRep
 
 
 def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
-    """
-    Average number of active (non-zero) dimensions per example.
-    Works for SparseRep or dense tensors.
-    """
     if isinstance(a, SparseRep):
+        if a.dense is not None:
+            return (a.dense > threshold).float().sum(dim=1).mean()
         return (a.values > threshold).float().sum(dim=1).mean()
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
-
 
 class Regularizer(nn.Module):
     def __init__(self, weight: float = 0.1, T: int = 10000):
@@ -35,19 +32,16 @@ class Regularizer(nn.Module):
 
 
 class FLOPs(Regularizer):
-    """
-    FLOPs-style sparsity regularizer, à la SPLADE.
-    """
-
     def forward(self, reps):
+        if isinstance(reps, SparseRep) and reps.dense is not None:
+            flops = F.softplus(reps.dense).sum(dim=1).mean()
+            return flops * self.weight_t
+
         if isinstance(reps, SparseRep):
-            # reps.values: [B, L] (non-zero term weights)
             flops = F.softplus(reps.values).sum() / reps.batch_size()
             return flops * self.weight_t
 
-        # dense fallback
         return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
-
 
 class L1(Regularizer):
     def forward(self, reps):
@@ -252,11 +246,8 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         # -------- Negative scores [B, N] --------
         if isinstance(q, SparseRep):
            
-            neg_flat = SparseRep(
-                indices=neg_d.indices.view(B * N, -1),
-                values=neg_d.values.view(B * N, -1),
-                size=neg_d.size,
-            )
+            neg_scores = torch.einsum("bd,bnd->bn", q.dense, neg_d.dense)
+
             neg_scores_full = q.cross_dot(neg_flat)  # [B, B*N]
             neg_scores = neg_scores_full.view(B, N)
         else:
