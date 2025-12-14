@@ -1,9 +1,10 @@
 from torch import nn
 import torch
 from colpali_engine.models.modernvbert.modeling_modernvbert import (
-    ModernVBertModel,
+    ModernVBertForMaskedLM,
     ModernVBertPreTrainedModel,
 )
+
 from colpali_engine.utils.sparse_rep import SparseRep
 
 
@@ -20,7 +21,7 @@ class MaxPoolValue(nn.Module):
 
 class ColModernVBertSparse(ModernVBertPreTrainedModel):
     """
-    Sparse ColBERT-style retriever on top of ModernVBERT.
+    SPLADE-style sparse retriever on top of ModernVBERT.
 
     Forward:
         - Runs ModernVBertModel to get last_hidden_state
@@ -39,14 +40,10 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         super().__init__(config=config)
 
         # Backbone encoder
-        self.model = ModernVBertModel(config, **kwargs)
-        hidden_size = self.model.config.text_config.hidden_size
-        vocab_size = self.model.config.text_config.vocab_size
-        self.splade_head = nn.Linear(hidden_size, vocab_size, bias=True)
+        self.model = ModernVBertForMaskedLM(config, **kwargs)
+
 
         for p in self.model.parameters():
-            p.requires_grad_(True)
-        for p in self.splade_head.parameters():
             p.requires_grad_(True)
 
         self.mask_non_image_embeddings = mask_non_image_embeddings
@@ -55,20 +52,11 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
 
     def forward(self, input_ids=None, attention_mask=None, special_tokens_mask=None, pixel_values=None, **kwargs) -> SparseRep:
         """
-        Forward pass through ModernVBert + SPLADE head.
-
-        Args:
-            input_ids:      [B, L]
-            attention_mask: [B, L]
-            pixel_values:   optional, if multimodal
-            special_tokens_mask: [B, L] mask for special tokens
-
         Returns:
-            SparseRep with indices=[B,L], values=[B,L], size=[B, V]
+            SparseRep with dense shape [B, V]
         """
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, pixel_values=pixel_values, **kwargs)
-        last_hidden_states = outputs[0]  # (B, L, H)
-        logits = self.splade_head(last_hidden_states)  # (B, L, V)
+        logits = outputs[0]  # (B, L, V)
 
         token_scores = torch.log1p(torch.relu(logits))  # (B, L, V)
 
