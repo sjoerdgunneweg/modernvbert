@@ -87,6 +87,10 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         doc_scores = scores.max(dim=1).values
         doc_scores = torch.nan_to_num(doc_scores, nan=0.0, posinf=0.0, neginf=0.0)
 
+
+        if self.training:
+            return SparseRep(dense=doc_scores)
+
         # top-k sparsification
         topk_vals, topk_idx = torch.topk(doc_scores, self.k, dim=1)
 
