@@ -35,7 +35,7 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
         token_weights = token_weights.squeeze(-1)  # (B, L)
 
         # Patch out of bound tokens their weights to zero
-        invalid_mask = kwargs["input_ids"] >= self.vocab_limit
+        invalid_mask = kwargs["input_ids"] >= self.vocab_size  # (B, L)
 
         # Step A: Set the VALUE of these tokens to 0 (so they have no effect)
         token_weights = token_weights.masked_fill(invalid_mask, 0.0)
