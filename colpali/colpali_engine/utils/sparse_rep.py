@@ -119,36 +119,50 @@ class SparseRep:
 
     def cross_dot(self, second):
         """return dot(first[i], second[j]) for all i,j"""
+
+        # ---------- DENSE ----------
         if self.format == SparseRep.DENSE_FORMAT:
             if second.format == SparseRep.DENSE_FORMAT:
                 return torch.mm(self.dense, second.dense.transpose(0, 1))
             else:
                 raise Exception(
-                    "Dot product between {self.format} and {second.format} is not supported"
+                    f"Dot product between {self.format} and {second.format} is not supported"
                 )
+
+        # ---------- SPARSE ----------
         elif self.format == SparseRep.SPARSE_FORMAT:
             if second.format == SparseRep.DENSE_FORMAT:
-                # some redundency, but more efficient
                 ids = self.indices.view(1, -1).expand(
                     second.dense.size(0), -1
-                )  # B_SIZE x A_SIZE x SEQ_LENGTH
+                )
                 selected_vals = second.dense.gather(1, ids)
                 selected_vals = selected_vals.view(
-                    second.dense.size(0), self.indices.size(0), self.indices.size(1)
-                ).permute(
-                    1, 2, 0
-                )  # A_SIZE x B_SIZE X SEQ_LENGTH
+                    second.dense.size(0),
+                    self.indices.size(0),
+                    self.indices.size(1),
+                ).permute(1, 2, 0)
                 score_mat = self.values.unsqueeze(-2).bmm(selected_vals)
                 return score_mat.squeeze(1)
-            else:
-                exact_match = (
-                    self.indices.unsqueeze(1).unsqueeze(-1)
-                    == second.indices.unsqueeze(0).unsqueeze(-2)
-                ).float()
-                score_mat = self.values.unsqueeze(1).unsqueeze(
-                    -1
-                ) * second.values.unsqueeze(0).unsqueeze(-2)
-                score_mat = score_mat * exact_match
-                return score_mat.max(dim=-1).values.sum(dim=-1)
+
+            # 🔑 SPLADE / MLM vocab-aligned case
+            if (
+                self.values.dim() == 2
+                and second.values.dim() == 2
+                and self.values.size(1) == second.values.size(1)
+            ):
+                return torch.matmul(self.values, second.values.T)
+
+            # ---------- token-level sparse fallback ----------
+            exact_match = (
+                self.indices.unsqueeze(1).unsqueeze(-1)
+                == second.indices.unsqueeze(0).unsqueeze(-2)
+            ).float()
+            score_mat = (
+                self.values.unsqueeze(1).unsqueeze(-1)
+                * second.values.unsqueeze(0).unsqueeze(-2)
+            )
+            score_mat = score_mat * exact_match
+            return score_mat.max(dim=-1).values.sum(dim=-1)
+
         else:
             raise Exception(f"sparse format {self.format} is not available")
