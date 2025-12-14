@@ -35,26 +35,25 @@ class Regularizer(nn.Module):
 
 
 class FLOPs(Regularizer):
-    """
-    FLOPs-style sparsity regularizer, à la SPLADE.
-    """
-
     def forward(self, reps):
         if isinstance(reps, SparseRep):
-            # reps.values: [B, L] (non-zero term weights)
-            flops = F.softplus(reps.values).sum() / reps.batch_size()
-            return flops * self.weight_t
+            if reps.format == SparseRep.SPARSE_FORMAT:
+                return F.softplus(reps.values).sum() / reps.batch_size() * self.weight_t
+            else:
+               
+                return F.softplus(reps.dense).sum(dim=1).mean() * self.weight_t
 
-        # dense fallback
         return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
-
-
+    
 class L1(Regularizer):
     def forward(self, reps):
         if isinstance(reps, SparseRep):
-            return reps.values.sum() / reps.batch_size() * self.weight_t
-        return reps.sum(dim=-1).mean() * self.weight_t
+            if reps.format == SparseRep.SPARSE_FORMAT:
+                return reps.values.sum() / reps.batch_size() * self.weight_t
+            else:
+                return reps.dense.sum(dim=1).mean() * self.weight_t
 
+        return reps.sum(dim=-1).mean() * self.weight_t
 
 class SparseBiEncoderModule(nn.Module):
     """
