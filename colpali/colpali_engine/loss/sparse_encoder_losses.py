@@ -80,9 +80,11 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         self,
         temperature: float = 0.02,
         in_batch_term_weight: float = 0.5,
+        pos_aware_negative_filtering: bool = False,
         q_regularizer: Optional[Regularizer] = None,
         d_regularizer: Optional[Regularizer] = None,
         debug: bool = False,
+        **kwargs,
     ):
         super().__init__(temperature=temperature)
 
