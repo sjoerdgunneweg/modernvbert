@@ -8,14 +8,9 @@ from colpali_engine.utils.sparse_rep import SparseRep
 
 
 def num_active_terms(a, threshold: float = 1e-6) -> torch.Tensor:
-    """
-    Average number of active (non-zero) dimensions per example.
-    Works for SparseRep or dense tensors.
-    """
     if isinstance(a, SparseRep):
         return (a.values > threshold).float().sum(dim=1).mean()
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
-
 
 class Regularizer(nn.Module):
     def __init__(self, weight: float = 0.1, T: int = 10000):
