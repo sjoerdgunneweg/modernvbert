@@ -18,7 +18,7 @@ train_dataset_args:
     - train
 tr_args:
   bf16: true
-  #ddp_find_unused_parameters: true
+  ddp_find_unused_parameters: false
   output_dir: models/colmodernvbert_hardnegs_text_300k_from_base_sparse2
   num_train_epochs: 3
   per_device_train_batch_size: 4
