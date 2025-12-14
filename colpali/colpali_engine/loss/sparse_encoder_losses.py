@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 from colpali_engine.utils.sparse_rep import SparseRep
 
 
-def num_active_terms(a, threshold: float = 1e-3) -> torch.Tensor:
+def num_active_terms(a, threshold: float = 1e-6) -> torch.Tensor:
     """
     Average number of active (non-zero) dimensions per example.
     Works for SparseRep or dense tensors.
