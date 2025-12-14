@@ -53,54 +53,52 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         self.main_input_name = "doc_input_ids"
         self.max_pool = MaxPoolValue(dim=1)  # row-wise max pooling
 
-    def forward(self, input_ids=None, attention_mask=None, special_tokens_mask=None, pixel_values=None, **kwargs) -> SparseRep:
-        """
-        Forward pass through ModernVBert + SPLADE head.
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        special_tokens_mask=None,
+        pixel_values=None,
+        **kwargs,
+    ) -> SparseRep:
 
-        Args:
-            input_ids:      [B, L]
-            attention_mask: [B, L]
-            pixel_values:   optional, if multimodal
-            special_tokens_mask: [B, L] mask for special tokens
-
-        Returns:
-            SparseRep with indices=[B,L], values=[B,L], size=[B, V]
-        """
-        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, pixel_values=pixel_values, **kwargs)
-        last_hidden_states = outputs[0]  # (B, L, H)
-        logits = self.splade_head(last_hidden_states)  # (B, L, V)
-
-        token_scores = torch.log1p(torch.relu(logits))  # (B, L, V)
-
-        # Mask out padding tokens
-        if attention_mask is not None:
-            mask = attention_mask.unsqueeze(-1).to(token_scores.dtype)  # (B, L, 1)
-            token_scores = token_scores * mask
-
-        # Mask out special tokens
-        if special_tokens_mask is not None:
-            special_mask = (1 - special_tokens_mask).unsqueeze(-1).to(token_scores.dtype)  # (B, L, 1)
-            token_scores = token_scores * special_mask
-
-       
-        if self.mask_non_image_embeddings and pixel_values is not None and input_ids is not None:
-            # assuming config.image_token_id is the special token marking image features
-            image_mask = (input_ids == self.config.image_token_id).unsqueeze(-1)  # (B, L, 1)
-            image_mask = image_mask.to(token_scores.dtype)
-            token_scores = token_scores * image_mask
-
-        # Max-pool over vocab dimension to get per-token scores
-        # token_scores: (B, L, V) -> (B, L) by taking max over V
-        token_scores = torch.max(token_scores, dim=-1).values  # (B, L)
-
-        vocab_size = self.splade_head.out_features
-        size = torch.tensor(
-            [token_scores.size(0), vocab_size],
-            device=token_scores.device,
+        outputs = self.model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            **kwargs,
         )
 
+        hidden = outputs.last_hidden_state          # (B, L, H)
+        logits = self.splade_head(hidden)           # (B, L, V)
+
+        scores = torch.log1p(torch.relu(logits)) 
+
+        if attention_mask is not None:
+            scores *= attention_mask.unsqueeze(-1)
+
+        if special_tokens_mask is not None:
+            scores *= (1 - special_tokens_mask).unsqueeze(-1)
+
+        if self.mask_non_image_embeddings and pixel_values is not None:
+            image_mask = (input_ids == self.config.image_token_id)
+            scores *= image_mask.unsqueeze(-1)
+
+        doc_scores = torch.max(scores, dim=1).values    # (B, V)
+
+        vocab_size = doc_scores.size(1)
+        size = torch.tensor(
+            [doc_scores.size(0), vocab_size],
+            device=doc_scores.device,
+        )
+
+        vocab_indices = torch.arange(
+            vocab_size,
+            device=doc_scores.device
+        ).unsqueeze(0).expand(doc_scores.size(0), -1)
+
         return SparseRep(
-            indices=input_ids,     # (B, L)
-            values=token_scores,   # (B, L)
-            size=size,             # [batch, vocab]
+            indices=vocab_indices,   
+            values=doc_scores,       
+            size=size,
         )
