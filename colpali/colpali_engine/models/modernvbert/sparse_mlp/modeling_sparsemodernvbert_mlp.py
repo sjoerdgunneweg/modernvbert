@@ -39,6 +39,7 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
             special_tokens_mask = kwargs["special_tokens_mask"].to(token_weights.dtype)  # (B, L)
             token_weights = token_weights * (1 - special_tokens_mask)
             print("hoi")
+        print("doei")
 
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
