@@ -7,7 +7,7 @@ from colpali_engine.models.modernvbert.modeling_modernvbert import (
 from colpali_engine.utils.sparse_rep import SparseRep
 
 
-class ColModernVBertSparseMLM(ModernVBertPreTrainedModel):
+class ColModernVBertSparse(ModernVBertPreTrainedModel):
     """
     MLM-head SPLADE-style sparse document encoder (LSR-style),
     adapted for in-batch contrastive training.
