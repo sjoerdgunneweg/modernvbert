@@ -62,8 +62,8 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         vocab_size = self.config.text_config.vocab_size
         logits = logits[:, :, :vocab_size]  # (B, L, V)
 
-        # SPLADE activation (stable)
-        scores = torch.log1p(F.relu(logits)) * self.scale
+        # SPLADE activation 
+        scores = torch.log1p(F.softplus(logits)) * self.scale
 
         # mask padding
         if attention_mask is not None:

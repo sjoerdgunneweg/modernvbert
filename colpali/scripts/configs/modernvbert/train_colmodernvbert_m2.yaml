@@ -33,13 +33,13 @@ config:
 
     q_regularizer:
       (): colpali_engine.loss.sparse_encoder_losses.FLOPs
-      weight: 0.1
-      T: 10000
+      weight: 0.001
+      T: 20000
 
     d_regularizer:
       (): colpali_engine.loss.sparse_encoder_losses.FLOPs
-      weight: 0.01
-      T: 10000
+      weight: 0.001
+      T: 20000
 
   tr_args:
     (): transformers.training_args.TrainingArguments
