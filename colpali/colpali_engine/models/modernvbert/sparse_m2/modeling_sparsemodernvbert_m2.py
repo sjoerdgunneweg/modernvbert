@@ -24,8 +24,5 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
         vision_out = self.vision_encoder(*args, **kwargs)
         text_out = self.text_encoder(*args, **kwargs)
 
-
-        if "pixel_values" in kwargs or "image_hidden_states" in kwargs:
-            return vision_out
-        else:
-            return text_out
+        vision = "pixel_values" in kwargs or "image_hidden_states" in kwargs
+        return vision_out * vision + text_out * (1 - vision)
