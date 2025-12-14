@@ -75,12 +75,15 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
             self.mask_non_image_embeddings
             and pixel_values is not None
             and input_ids is not None
+            and (input_ids == self.config.image_token_id).any()
         ):
             image_mask = (input_ids == self.config.image_token_id)
             scores = scores * image_mask.unsqueeze(-1)
 
+
         # max-pool over sequence → (B, V)
         doc_scores = scores.max(dim=1).values
+        doc_scores = torch.nan_to_num(doc_scores, nan=0.0, posinf=0.0, neginf=0.0)
 
         topk_vals, topk_idx = torch.topk(doc_scores, self.k, dim=1)
 
