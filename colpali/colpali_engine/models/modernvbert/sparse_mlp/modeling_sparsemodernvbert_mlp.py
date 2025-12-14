@@ -65,4 +65,4 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
         print("inputd ids shape:")
         print(kwargs["input_ids"].shape)
 
-        return SparseRep(indices=kwargs["input_ids"], values=token_weights, size=size).to_dense()
+        return SparseRep(indices=safe_input_ids, values=token_weights, size=size).to_dense()
