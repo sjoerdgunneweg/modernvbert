@@ -1,5 +1,7 @@
 from torch import nn
 import torch
+import torch.nn.functional as F
+
 from colpali_engine.models.modernvbert.modeling_modernvbert import (
     ModernVBertForMaskedLM,
     ModernVBertPreTrainedModel,
