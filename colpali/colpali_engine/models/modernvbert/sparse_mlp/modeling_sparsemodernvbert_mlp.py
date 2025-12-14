@@ -34,24 +34,21 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
         token_weights = self.mlp_head(last_hidden_states)  # (B, L, 1)
         token_weights = token_weights.squeeze(-1)  # (B, L)
 
-        # Remove special toekens:
-        if "special_tokens_mask" in kwargs and kwargs["special_tokens_mask"] is not None:
-            special_tokens_mask = kwargs["special_tokens_mask"].to(token_weights.dtype)  # (B, L)
-            token_weights = token_weights * (1 - special_tokens_mask)
-            print("hoi")
-        print("doei")
+        # Patch out of bound tokens their weights to zero
+        invalid_mask = kwargs["input_ids"] >= self.vocab_limit
+
+        # Step A: Set the VALUE of these tokens to 0 (so they have no effect)
+        token_weights = token_weights.masked_fill(invalid_mask, 0.0)
+
+        # Step B: Set the INDEX of these tokens to 0 (so scatter doesn't crash)
+        # We use 0 because it's guaranteed to be a valid index.
+        # Since the value is 0.0, it won't corrupt the actual embedding at index 0.
+        safe_input_ids = kwargs["input_ids"].masked_fill(invalid_mask, 0)
 
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
             mask = kwargs["attention_mask"].to(token_weights.dtype)  # (B, L)
             token_weights = token_weights * mask
-
-        # keep only image tokens (if multimodal and specified):
-        if self.mask_non_image_embeddings and "pixel_values" in kwargs and "input_ids" in kwargs:
-            # assuming config.image_token_id is the special token marking image features
-            image_mask = (kwargs["input_ids"] == self.config.image_token_id)  # (B, L)
-            image_mask = image_mask.to(token_weights.dtype)
-            token_weights = token_weights * image_mask
 
         # norm default: log(1 + Relu(x))
         token_weights = torch.log1p(torch.relu(token_weights))  # (B, L)
