@@ -1,5 +1,6 @@
 from torch import nn
 import torch
+import torch.nn.functional as F
 from colpali_engine.models.modernvbert.modeling_modernvbert import (
     ModernVBertForMaskedLM,
     ModernVBertPreTrainedModel,
@@ -23,6 +24,7 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         config,
         k: int = 1000,
         mask_non_image_embeddings: bool = False,
+        init_scale: float = 50.0,   # 🔑 important
         **kwargs,
     ):
         super().__init__(config)
@@ -32,7 +34,9 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         self.mask_non_image_embeddings = mask_non_image_embeddings
         self.main_input_name = "doc_input_ids"
 
-        # ensure model is trainable
+        # learnable SPLADE scale (like SPLADE / EPIC)
+        self.scale = nn.Parameter(torch.tensor(init_scale))
+
         for p in self.model.parameters():
             p.requires_grad_(True)
 
@@ -55,15 +59,11 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         # MLM logits: (B, L, V + extra)
         logits = outputs.logits
 
-        # keep only text vocab
         vocab_size = self.config.text_config.vocab_size
-        logits = logits[:, :, :vocab_size]   # (B, L, V)
+        logits = logits[:, :, :vocab_size]  # (B, L, V)
 
-        self.scale = nn.Parameter(torch.tensor(1.0))
-
-        # SPLADE activation
-        # scores = torch.log1p(torch.relu(logits))  # (B, L, V)
-        scores = torch.log1p(torch.relu(logits)) * self.scale
+        # SPLADE activation (stable)
+        scores = torch.log1p(F.relu(logits)) * self.scale
 
         # mask padding
         if attention_mask is not None:
@@ -73,7 +73,7 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         if special_tokens_mask is not None:
             scores = scores * (1 - special_tokens_mask).unsqueeze(-1)
 
-        # optionally keep only image tokens
+        # optional image-only masking
         if (
             self.mask_non_image_embeddings
             and pixel_values is not None
@@ -83,11 +83,11 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
             image_mask = (input_ids == self.config.image_token_id)
             scores = scores * image_mask.unsqueeze(-1)
 
-
-        # max-pool over sequence → (B, V)
+        # max-pool over sequence
         doc_scores = scores.max(dim=1).values
         doc_scores = torch.nan_to_num(doc_scores, nan=0.0, posinf=0.0, neginf=0.0)
 
+        # top-k sparsification
         topk_vals, topk_idx = torch.topk(doc_scores, self.k, dim=1)
 
         size = torch.tensor(
@@ -96,7 +96,7 @@ class ColModernVBertSparse(ModernVBertPreTrainedModel):
         )
 
         return SparseRep(
-            indices=topk_idx,    # (B, k)
-            values=topk_vals,   # (B, k)
+            indices=topk_idx,   # (B, k)
+            values=topk_vals,  # (B, k)
             size=size,
         )
