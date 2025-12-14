@@ -21,13 +21,13 @@ new_state_dict = {}
 for key, value in source_state_dict.items():
     # A. Map to Vision Encoder (MaskedLM -> MaskedLM)
     # The keys match 1:1, just add the prefix
-    new_state_dict[f"vision_encoder.model.{key}"] = value
+    new_state_dict[f"vision_encoder.model.{key}"] = value.clone()
 
     # B. Map to Text Encoder (MaskedLM -> Base Model)
     # We only want keys starting with 'model.', and we strip that prefix
     if key.startswith("model."):
         stripped_key = key[6:] # remove 'model.'
-        new_state_dict[f"text_encoder.model.{stripped_key}"] = value
+        new_state_dict[f"text_encoder.model.{stripped_key}"] = value.clone()
 
 # 5. Load this new constructed state dict
 print("Loading constructed state dict...")
