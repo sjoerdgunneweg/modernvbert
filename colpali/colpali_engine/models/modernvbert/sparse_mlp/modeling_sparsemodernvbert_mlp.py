@@ -34,6 +34,12 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
         token_weights = self.mlp_head(last_hidden_states)  # (B, L, 1)
         token_weights = token_weights.squeeze(-1)  # (B, L)
 
+        # Remove special toekens:
+        if "special_tokens_mask" in kwargs and kwargs["special_tokens_mask"] is not None:
+            special_tokens_mask = kwargs["special_tokens_mask"].to(token_weights.dtype)  # (B, L)
+            token_weights = token_weights * (1 - special_tokens_mask)
+            print("hoi")
+
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
             mask = kwargs["attention_mask"].to(token_weights.dtype)  # (B, L)

@@ -69,6 +69,12 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
         output = self.model(*args, **kwargs)
         logits = output[0]  # (B, L, V)
 
+        # Remove special toekens:
+        if "special_tokens_mask" in kwargs and kwargs["special_tokens_mask"] is not None:
+            special_tokens_mask = kwargs["special_tokens_mask"].unsqueeze(-1).to(logits.dtype)  # (B, L, 1)
+            logits = logits * (1 - special_tokens_mask)
+            print("hoi")
+
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
             mask = kwargs["attention_mask"].unsqueeze(-1).to(logits.dtype)  # (B, L, 1)
