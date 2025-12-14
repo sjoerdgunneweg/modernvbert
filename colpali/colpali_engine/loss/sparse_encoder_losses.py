@@ -9,8 +9,14 @@ from colpali_engine.utils.sparse_rep import SparseRep
 
 def num_active_terms(a, threshold: float = 1e-6) -> torch.Tensor:
     if isinstance(a, SparseRep):
-        return (a.values > threshold).float().sum(dim=1).mean()
+        if a.format == SparseRep.SPARSE_FORMAT:
+            return (a.values > threshold).float().sum(dim=1).mean()
+        else:
+            # 🔑 dense vocab-aligned SPLADE case
+            return (a.dense > threshold).float().sum(dim=1).mean()
+
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
+
 
 class Regularizer(nn.Module):
     def __init__(self, weight: float = 0.1, T: int = 10000):
