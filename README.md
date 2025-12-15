@@ -62,7 +62,8 @@ pip install timm
 | SigLIP2-L-512/16 (Tschannen et al., 2025) | | 0.88 | - | - | - | - |
 | ColFlor (Masry & Hoque, 2024) | $\checkmark$ | 0.17 | - | - | - | - |
 | BiModernVBERT | | 0.25 | - | - | - | - |
-| ColModernVBERT | $\checkmark$ | 0.25 | - | - | - | - |
+| ColModernVBERT (Our Contrastive Training) | $\checkmark$ | 0.25 | 3.3 | 3.8 | 3.6 | - |
+| ColModernVBERT (Theirs) | $\checkmark$ | 0.25 | 3.4 | 4.0 | 3.7 | - |
 
 
 # repo information:
