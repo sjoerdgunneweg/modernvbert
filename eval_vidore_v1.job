@@ -5,7 +5,7 @@
 #SBATCH --job-name=Eval
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=18
-#SBATCH --time=02:00:00
+#SBATCH --time=03:00:00
 #SBATCH --output=output/eval_%A.out
 
 
@@ -20,4 +20,4 @@ cd $HOME/modernvbert
 # Activate your environment
 source activate modernvbert
 # Run your code
-srun python modernvbert/src/modernvbert/contrastive_training/evaluate.py --config configs/evaluation/eval_colmodernvbert.yaml --ViDoRe_V1
+srun python modernvbert/src/modernvbert/contrastive_training/evaluate.py --config configs/evaluation/eval_colmodernvbert_reproduction.yaml --ViDoRe_V1

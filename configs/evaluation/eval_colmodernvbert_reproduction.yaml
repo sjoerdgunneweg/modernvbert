@@ -1,5 +1,5 @@
 eval_config:
-  model_name_or_path: models/colmodernvbert_reproduction/final/
+  model_name_or_path: /home/scur1716/modernvbert/models/colmodernvbert_reproduction/
   wrapper_cls: ColModernVBertWrapper
   tasks:
   - ViDoRe(v1)

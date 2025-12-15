@@ -164,7 +164,7 @@ def main(cfg, args) -> None:
         torch_dtype=torch.float16,
         attn_implementation=cfg.eval_config.attn_implementation,
     )
-
+    custom_model.mdl = custom_model.mdl.to(dtype=torch.float16) # ensure float16, did not work for local model TODO
 #-------------------------------------------------------------------------
     print("[INFO] Model loaded successfully:", custom_model)
 #---------------------------------------------------------------------------
