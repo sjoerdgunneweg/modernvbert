@@ -1,0 +1,57 @@
+added a 300k rlhn dataloader to the code with sampler from the big one.
+
+
+# Meeting 4dec:
+for query mlp for doc mlm
+m2 of the paper of thong
+
+mlp head from learned sparse retrieval framework
+
+for mlm its harder to control the sparsity
+
+use flops regularization
+
+mlm for query and mlm for doc fails cuz hard to control the regularization
+
+for query 0.01 regularization weights
+for doc 0.1 regularization weights
+T should be less than total steps
+
+look at it after about 2000 steps around an hour of running
+
+
+weights and biasses login
+
+
+
+shortly mention mlm and mlp methods of doing lSR
+
+narrative dat modernvbert een gap heeft dat er geen LSR bekeken is maar wel late interaction, dan het stukje van de LSR framework aanhalen en
+dan er ook op wijzen dat er in het algemeen een gap in het veld is dat er geen werk is in visual document retrieval waarbij multimodal modellen
+worden gebfruikt met LSR en aanhalen dat het interessant is omdat modernvbert ook laat zien dat voor andere design decisions er performance differences
+waren tussen visual document and natural image tasks.
+
+#8 dec:
+in contrastive_training branch changed that peft wrapper is also loaded from checkpoint.
+# 9dec:
+in contrastive_training branch changed one line to make merged model checkpoint work in modeling_modernvbert.py
+
+
+# 11 dec contrastive training now works as expected due to changes in the contrastive_learning/train.py
+changes in colpali_engine/models/modernvbert/moderling_modernvbert.py to load in the merged checkpoint from hf
+in config.py of contrastive training we added a rlhn-300k dataset loading function.
+have set ddp_find_unused_parameters to false as it is more efficient without. and reduced the per device bsize to 8 and bumped the gradient accumulation to 2.
+
+!!!Could it be that MLM does not work well as we add a new mlm head on top of the hidden layers that is not pretrained for mlm?!!
+
+shoeld document the sparse models better
+
+MLM is fixed to use the mlm head for computing logits.
+
+Sparse models need testing
+
+then merge to main and run
+
+mlp model is also added.
+
+config torch_dtype werkt niet dus geen flash attention 2 voor onze versie van colmodernvbert

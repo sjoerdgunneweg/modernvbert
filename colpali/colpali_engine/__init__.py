@@ -21,7 +21,11 @@ from .models import (
     # ColQwen2_5Omni,
     # ColQwen2_5OmniProcessor,
     ColQwen2Processor,
-    ColModernVBertSparse,
-    ColModernVBertSparseProcessor,
-    
+    SparseModernVBertMLM,
+    SparseModernVBertMLMProcessor,
+    SparseModernVBertMLP,
+    SparseModernVBertMLPProcessor,
+    SparseModernVBertM2,
+    SparseModernVBertM2Processor,
+
 )

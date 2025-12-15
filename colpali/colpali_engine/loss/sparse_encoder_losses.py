@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 from torch import nn
 from typing import Optional, Tuple, Dict, Any
+from .regularizer import Regularizer, FLOPs, L1
 
 
 def num_active_terms(a: torch.Tensor, threshold: float = 1e-3) -> torch.Tensor:
@@ -17,70 +18,6 @@ def num_active_terms(a: torch.Tensor, threshold: float = 1e-3) -> torch.Tensor:
         Scalar tensor: mean number of active dimensions over the batch.
     """
     return (F.relu(a) > threshold).float().sum(dim=1).mean()
-
-
-class Regularizer(nn.Module):
-    """
-    Base class for sparse regularizers with warmup scheduling.
-
-    Attributes
-    ----------
-    weight_T : float
-        Target max weight of the regularizer after warmup.
-    T : int
-        Number of steps before reaching full weight (warmup length).
-    t : int
-        Current step.
-    weight_t : float
-        Current effective weight, evolves from 0 to weight_T over T steps.
-    """
-
-    def __init__(self, weight: float = 0.1, T: int = 10000) -> None:
-        """
-        Initialize regularizer with warmup schedule.
-
-        Args:
-            weight: Target regularizer weight when warmup completes.
-            T: Number of steps over which to warm up.
-        """
-        super().__init__()
-        self.weight_T = weight
-        self.weight_t = 0.0
-        self.T = T
-        self.t = 0
-
-    def step(self):
-        """
-        Advance the warmup schedule by one training step.
-
-        The weight starts at 0 and increases quadratically up to weight_T
-        between step 1 and step T. After T, weight_t stays at weight_T.
-        """
-        if self.t < self.T:
-            self.t += 1
-            self.weight_t = self.weight_T * (self.t / self.T) ** 2
-
-    def forward(self, reps: torch.Tensor) -> torch.Tensor:
-        """
-        Placeholder forward definition; must be implemented in subclasses.
-
-        Args:
-            reps: batch representation tensor.
-
-        Returns:
-            Regularization loss term (scalar tensor).
-        """
-        raise NotImplementedError("This is an abstract regularizer only.")
-
-class FLOPs(Regularizer):
-    def forward(self, reps: torch.Tensor) -> torch.Tensor:
-        # softplus(reps) is like a smooth ReLU; summing gives an "activation mass" per example, then we mean over batch and scale by warmup weight.
-        return F.softplus(reps).sum(dim=-1).mean() * self.weight_t
-
-class L1(Regularizer):
-    def forward(self, reps: torch.Tensor) -> torch.Tensor:
-        l1 = reps.sum(dim=-1).mean()
-        return l1 * self.weight_t 
 
 class SparseBiEncoderModule(nn.Module):
     """
@@ -196,8 +133,8 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
         self.ce_loss = CrossEntropyLoss()
 
         # Avoid using nn.Module instances as default args: create them here if None.
-        self.q_regularizer = q_regularizer or L1(weight=0.1, T=10000) 
-        self.d_regularizer = d_regularizer or L1(weight=0.01, T=10000) 
+        self.q_regularizer = q_regularizer #or FLOPs(weight=0.001, T=10000)
+        self.d_regularizer = d_regularizer or FLOPs(weight=0.01, T=10000)
 
     def forward(self, query_embeddings: torch.Tensor, doc_embeddings: torch.Tensor, offset: int = 0) -> torch.Tensor:
         """
@@ -268,8 +205,8 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         self.debug = debug
 
         # Avoid module instances as default args; create them per-loss instance.
-        self.q_regularizer = q_regularizer or L1(weight=0.1, T=10000)
-        self.d_regularizer = d_regularizer or L1(weight=0.01, T=10000)
+        self.q_regularizer = q_regularizer #or FLOPs(weight=0.001, T=10000)
+        self.d_regularizer = d_regularizer or FLOPs(weight=0.01, T=10000)
 
         self.in_batch_loss_fn = SparseBiEncoderLoss(
             temperature=temperature,
