@@ -139,7 +139,7 @@ def main(cfg, args) -> None:
 
     custom_model_meta = ModelMeta(
         loader=model_class,
-        name=name, 
+        name=name,
         modalities=["image", "text"], # TODO is this always constant?
         framework=cfg.eval_config.framework,
         similarity_fn_name=cfg.eval_config.similarity_fn_name,
@@ -161,19 +161,17 @@ def main(cfg, args) -> None:
     custom_model = custom_model_meta.load_model(
         model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
-        torch_dtype=torch.float16,
-        attn_implementation=cfg.eval_config.attn_implementation,
     )
-    custom_model.mdl = custom_model.mdl.to(dtype=torch.float16) # ensure float16, did not work for local model TODO
+
 #-------------------------------------------------------------------------
     print("[INFO] Model loaded successfully:", custom_model)
 #---------------------------------------------------------------------------
-        
+
     if name == "ModernVBERT/colmodernvbert" or name == "ModernVBERT/bimodernvbert" or "colmodernvbert_reproduction" in name:
         print("[INFO] Adjusting image processor settings for ColModernVBert model...")
         custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
         custom_model.processor.image_processor.do_resize = cfg.eval_config.encode_kwargs.pop("do_resize", True)
-    
+
 
     # --- Load tasks ---
     # tasks = mteb.get_tasks(tasks=cfg.eval_config.tasks)
