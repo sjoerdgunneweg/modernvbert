@@ -1,5 +1,5 @@
 model_args:
-  model_name_or_path: ModernVBERT/modernvbert
+  model_name_or_path: ModernVBERT/colmodernvbert-base
   model_type: ColModernVBert
   loss_type: ColbertNegativeCELoss
   loading_kwargs:
