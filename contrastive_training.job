@@ -2,9 +2,9 @@
 
 #SBATCH --partition=gpu_a100
 #SBATCH --gpus=4
-#SBATCH --job-name=Contrastive
+#SBATCH --job-name=Col_Contrastive_training
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=72
 #SBATCH --time=60:00:00
 #SBATCH --output=output/eval_%A.out
 
@@ -18,7 +18,7 @@ module load CUDA/12.8.0
 # Your job starts in the directory where you call sbatch
 cd $HOME/modernvbert
 # Activate your environment
-export WANDB_PROJECT="vbert"
+export WANDB_PROJECT="reproduction_modern_vbert"
 source activate modernvbert
 # Run your code
 srun accelerate launch --num_processes=4 --main_process_port 29500 modernvbert/src/modernvbert/contrastive_training/train.py \
