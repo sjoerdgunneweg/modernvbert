@@ -11,9 +11,9 @@ import pandas as pd
 from mteb.abstasks import (
     AbsTask,
 )
-from mteb.abstasks.task_metadata import TaskCategory, TaskDomain, TaskType
-from mteb.filter_tasks import filter_tasks
-from mteb.types import Modalities
+from vidore_v3.abstasks.task_metadata import TaskCategory, TaskDomain, TaskType
+from vidore_v3.filter_tasks import filter_tasks
+from vidore_v3.types import Modalities
 
 logger = logging.getLogger(__name__)
 
