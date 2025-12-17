@@ -13,8 +13,7 @@ from mteb.overview import get_tasks
 from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models
 from mteb.model_meta import ModelMeta
 
-from vidore_v3.benchmark import VidoreBenchmark
-
+from mteb.benchmarks.benchmark import VidoreBenchmark
 #--------------------------------------------
 # from mteb.benchmarks import VIDORE, VIDORE_V2
 #--------------------------------------------
