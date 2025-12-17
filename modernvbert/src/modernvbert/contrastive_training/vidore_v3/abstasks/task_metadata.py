@@ -20,7 +20,7 @@ from typing_extensions import Required, TypedDict
 
 import mteb
 from mteb.languages import check_language_code
-from mteb.types import (
+from vidore_v3.types import (
     HFSubset,
     ISOLanguageScript,
     Languages,
@@ -30,7 +30,7 @@ from mteb.types import (
     StrDate,
     StrURL,
 )
-from mteb.types.statistics import DescriptiveStatistics
+from vidore_v3.types.statistics import DescriptiveStatistics
 
 logger = logging.getLogger(__name__)
 
