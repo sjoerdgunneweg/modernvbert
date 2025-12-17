@@ -1,6 +1,6 @@
 from typing_extensions import NotRequired, TypedDict
 
-from mteb.types import HFSubset
+from vidore_v3.types import HFSubset
 
 
 class SplitDescriptiveStatistics(TypedDict):
