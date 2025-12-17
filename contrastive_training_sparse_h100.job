@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_h100
+#SBATCH --gpus=4
+#SBATCH --job-name=Contrastive
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --time=60:00:00
+#SBATCH --output=output/contrastive_sparse_%A.out
+
+
+module purge
+module load 2025
+module load Anaconda3/2025.06-1
+module load CUDA/12.8.0
+
+
+# Your job starts in the directory where you call sbatch
+cd $HOME/modernvbert
+# Activate your environment
+export WANDB_PROJECT="vbert"
+source activate modernvbert
+# Run your code
+srun accelerate launch --num_processes=4 --main_process_port 29501 modernvbert/src/modernvbert/contrastive_training/train.py \
+     -c modernvbert/src/modernvbert/contrastive_training/modernvbert/doc/config/colmodel_hardnegs_text_300k_no_vdr_from_base_sparse.yaml

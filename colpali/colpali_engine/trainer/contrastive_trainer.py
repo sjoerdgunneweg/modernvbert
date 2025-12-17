@@ -189,6 +189,13 @@ class ContrastiveTrainer(Trainer):
         query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
         doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
 
+        model_name = model.__class__.__name__
+
+        if "SparseModernVBert" in model_name:
+            # add a query/ doc indicator to the inputs
+            query_inputs["is_query"] = True
+            doc_inputs["is_query"] = False
+
         query_outputs = model(**query_inputs)
         doc_outputs   = model(**doc_inputs)
 

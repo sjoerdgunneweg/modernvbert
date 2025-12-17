@@ -1,6 +1,6 @@
 model_args:
-  model_name_or_path: ModernVBERT/modernvbert
-  model_type: ColModernVBertSparse
+  model_name_or_path: /home/scur1709/modernvbert/models/sparsemodernvbert_initialization
+  model_type: SparseModernVBertM2
   loss_type: SparseBiNegativeCELoss
   loading_kwargs:
     attn_implementation: flash_attention_2
@@ -10,10 +10,15 @@ train_dataset_args:
 - dataset_name_or_path: manu/colpali-queries
   loading_kwargs:
     num_negs: 1
-- dataset_name_or_path: rlhn/rlhn-100K
-
+- dataset_name_or_path: rlhn/rlhn-300k
+  loading_kwargs:
+    num_negs: 2
+    num_samples: 300000
+    subsets:
+    - train
 tr_args:
   bf16: true
+  ddp_find_unused_parameters: false
   output_dir: models/colmodernvbert_hardnegs_text_300k_from_base_sparse2
   num_train_epochs: 3
   per_device_train_batch_size: 4
