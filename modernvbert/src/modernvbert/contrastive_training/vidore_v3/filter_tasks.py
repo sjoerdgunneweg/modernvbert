@@ -8,7 +8,7 @@ from mteb.abstasks import (
     AbsTask,
 )
 from mteb.abstasks.aggregated_task import AbsTaskAggregate
-from mteb.abstasks.task_metadata import TaskCategory, TaskDomain, TaskType
+from vidore_v3.abstasks.task_metadata import TaskCategory, TaskDomain, TaskType
 from mteb.languages import (
     ISO_TO_LANGUAGE,
     ISO_TO_SCRIPT,
