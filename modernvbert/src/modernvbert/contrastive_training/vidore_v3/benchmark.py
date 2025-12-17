@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 import pandas as pd
 
-from _create_table import (
+from vidore_v3._create_table import (
     _create_per_language_table_from_benchmark_results,
     _create_per_task_table_from_benchmark_results,
     _create_summary_table_from_benchmark_results,
