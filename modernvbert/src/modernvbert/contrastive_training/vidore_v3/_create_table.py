@@ -7,7 +7,7 @@ import pandas as pd
 
 import mteb
 from vidore_v3.get_tasks import get_task, get_tasks
-from vidore_v3.benchmarks_results import BenchmarkResults
+from vidore_v3.results.benchmarks_results import BenchmarkResults
 
 
 def _borda_count(scores: pd.Series) -> pd.Series:

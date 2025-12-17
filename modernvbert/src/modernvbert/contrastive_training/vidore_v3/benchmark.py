@@ -12,7 +12,7 @@ from vidore_v3._create_table import (
     _create_summary_table_mean_subset,
     _create_summary_table_mean_task_type,
 )
-from mteb.results import BenchmarkResults
+from vidore_v3.results import BenchmarkResults
 from mteb.types import StrURL
 
 if TYPE_CHECKING:
