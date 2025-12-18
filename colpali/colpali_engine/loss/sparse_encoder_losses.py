@@ -134,7 +134,7 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
 
         # Avoid using nn.Module instances as default args: create them here if None.
         self.q_regularizer = q_regularizer #or FLOPs(weight=0.001, T=10000)
-        self.d_regularizer = d_regularizer or FLOPs(weight=0.01, T=10000)
+        self.d_regularizer = d_regularizer or FLOPs(weight=0.001, T=10000)
 
     def forward(self, query_embeddings: torch.Tensor, doc_embeddings: torch.Tensor, offset: int = 0) -> torch.Tensor:
         """
@@ -167,14 +167,14 @@ class SparseBiEncoderLoss(SparseBiEncoderModule):
             self.d_regularizer.step()
 
         # SPLADE FLOPs regularization terms.
-        reg_q = self.q_regularizer(query_embeddings) if self.q_regularizer is not None else 0.0
+        # reg_q = self.q_regularizer(query_embeddings) if self.q_regularizer is not None else 0.0
         reg_d = self.d_regularizer(doc_embeddings) if self.d_regularizer is not None else 0.0
 
         # Temperature scaling and cross-entropy.
         scores = scores / self.temperature
         ce_loss = self.ce_loss(scores, pos_idx)
 
-        total_loss = ce_loss + reg_q + reg_d
+        total_loss = ce_loss + reg_d
 
         return total_loss
 
@@ -206,7 +206,7 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
 
         # Avoid module instances as default args; create them per-loss instance.
         self.q_regularizer = q_regularizer #or FLOPs(weight=0.001, T=10000)
-        self.d_regularizer = d_regularizer or FLOPs(weight=0.01, T=10000)
+        self.d_regularizer = d_regularizer or FLOPs(weight=0.001, T=10000)
 
         self.in_batch_loss_fn = SparseBiEncoderLoss(
             temperature=temperature,
@@ -262,17 +262,22 @@ class SparseBiNegativeCELoss(SparseBiEncoderModule):
         if self.d_regularizer is not None:
             self.d_regularizer.step()
 
-        reg_q = self.q_regularizer(query_embeddings) if self.q_regularizer is not None else 0.0
+        # reg_q = self.q_regularizer(query_embeddings) if self.q_regularizer is not None else 0.0
 
         # Apply document regularizer to both positives and negatives.
-        docs_all = torch.cat([doc_embeddings, neg_doc_embeddings.flatten(0, 1)], dim=0)  # [B + B*N, D]
-        reg_d = self.d_regularizer(docs_all) if self.d_regularizer is not None else 0.0
-        total_loss = contrastive_loss + reg_q + reg_d
+        # docs_all = torch.cat([doc_embeddings, neg_doc_embeddings.flatten(0, 1)], dim=0)  # [B + B*N, D]
+        # reg_d = self.d_regularizer(docs_all) if self.d_regularizer is not None else 0.0
+
+        reg_pos = self.d_regularizer(doc_embeddings)
+        reg_neg = self.d_regularizer(neg_doc_embeddings.flatten(0, 1))
+        reg_d = 0.5 * reg_pos + 0.5 * reg_neg
+
+        total_loss = contrastive_loss + reg_d
 
         return {
             "loss": total_loss,
             "contrastive_loss": contrastive_loss,
-            "reg_q": reg_q,
+            "reg_q": 0.0,
             "reg_d": reg_d,
             "query_length": num_active_terms(query_embeddings),
             "doc_length": num_active_terms(doc_embeddings),

@@ -1,5 +1,6 @@
 model_args:
-  model_name_or_path: /home/scur1709/modernvbert/models/sparsemodernvbert_initialization
+  # model_name_or_path: /home/scur1709/modernvbert/models/sparsemodernvbert_initialization
+  model_name_or_path: ModernVBERT/modernvbert-embed
   model_type: SparseModernVBertM2
   loss_type: SparseBiNegativeCELoss
   loading_kwargs:
@@ -18,7 +19,7 @@ train_dataset_args:
     - train
 tr_args:
   bf16: true
-  ddp_find_unused_parameters: false
+  ddp_find_unused_parameters: true
   output_dir: models/colmodernvbert_hardnegs_text_300k_from_base_sparse2
   num_train_epochs: 3
   per_device_train_batch_size: 4
@@ -38,10 +39,18 @@ tr_args:
   run_name: colmodernvbert_hardnegs_text_300k_from_base_sparse
   report_to: wandb
   use_symmetric_loss: false # No symmetric loss with hard negatives
+# lora_config:
+#   r: 32
+#   lora_alpha: 32
+#   lora_dropout: 0.1
+#   init_lora_weights: gaussian
+#   bias: none
+#   task_type: FEATURE_EXTRACTION
+#   target_modules: (.*(model.text_model).*(Wo|Wqkv|Wi).*$|.*(custom_text_proj).*$)
 lora_config:
-  r: 32
-  lora_alpha: 32
-  lora_dropout: 0.1
+  r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
   init_lora_weights: gaussian
   bias: none
   task_type: FEATURE_EXTRACTION

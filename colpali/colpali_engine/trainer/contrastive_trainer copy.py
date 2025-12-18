@@ -1,6 +1,5 @@
 from functools import partial
 from typing import Optional
-from typing import Any, Dict
 
 import datasets
 import torch
@@ -186,33 +185,27 @@ class ContrastiveTrainer(Trainer):
         return neg_doc_outputs
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        # # === Extract inputs ===
-        # query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
-        # doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
+        # === Extract inputs ===
+        query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
+        doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
 
-        # model_name = model.__class__.__name__
-        # if "SparseModernVBert" in model_name:
-        #     # add a query/ doc indicator to the inputs
-        #     query_inputs["is_query"] = True
-        #     doc_inputs["is_query"] = False
+        model_name = model.__class__.__name__
 
-        # query_outputs = model(**query_inputs)
-        # doc_outputs   = model(**doc_inputs)
-        # print("self.query_prefix ", self.query_prefix)
-        # print("self.pos_prefix ", self.pos_prefix)
+        if "SparseModernVBert" in model_name:
+            # add a query/ doc indicator to the inputs
+            query_inputs["is_query"] = True
+            doc_inputs["is_query"] = False
+
+        query_outputs = model(**query_inputs)
+        doc_outputs   = model(**doc_inputs)
 
         # === Hard negatives ===
-        # neg_doc_outputs = None
-        # if "neg_doc_input_ids" in inputs:
-        #     num_negs = inputs["neg_doc_input_ids"].size(1)
-        #     neg_doc_inputs = self._reshape_neg_doc_inputs(inputs)
-        #     neg_doc_outputs = model(**neg_doc_inputs)
-        #     neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
-
-        dict_outpus = model(**inputs)
-        query_outputs = dict_outpus["q_out"]
-        doc_outputs = dict_outpus["d_out"]
-        neg_doc_outputs = dict_outpus.get("neg_d_out", None)
+        neg_doc_outputs = None
+        if "neg_doc_input_ids" in inputs:
+            num_negs = inputs["neg_doc_input_ids"].size(1)
+            neg_doc_inputs = self._reshape_neg_doc_inputs(inputs)
+            neg_doc_outputs = model(**neg_doc_inputs)
+            neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
 
         # === Main loss: query → doc ===
         loss_out = self._compute_loss_from_outputs(query_outputs, doc_outputs, neg_doc_outputs)

@@ -5,6 +5,7 @@ from colpali_engine.models.modernvbert.modeling_modernvbert import (
     ModernVBertPreTrainedModel,
 )
 from colpali_engine.utils.sparse_rep import SparseRep
+import torch.nn.functional as F
 
 
 class MaxPoolValue(nn.Module):
@@ -49,8 +50,6 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
         self.max_pool = MaxPoolValue(dim=1)  # row-wise max pooling
 
 
-
-
     def forward(self, *args, **kwargs) -> torch.Tensor:
         """
         Forward pass through ModernVBert + SPLADE head.
@@ -67,8 +66,14 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
                           external normalization).
         """
         output = self.model(*args, **kwargs)
-        logits = output[0]  # (B, L, V+additional_vocab_size)
+        # logits = output[0]  # (B, L, V+additional_vocab_size)
+        logits = output.logits  # (B, L, V+additional_vocab_size)
+        # print("logits", logits.shape, logits.dtype, logits)
+        # print("min logits", logits.min().item(), "max logits", logits.max().item())
+
         logits = logits[:, :, : self.model.config.text_config.vocab_size]  # (B, L, V)
+        logits = torch.log1p(F.softplus(logits))  # (B, L, V)
+        # logits = torch.log1p(torch.softplus(logits))  # (B, L, V)
 
         # Remove padding tokens:
         if "attention_mask" in kwargs and kwargs["attention_mask"] is not None:
@@ -82,8 +87,6 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
             image_mask = image_mask.to(logits.dtype)
             logits = logits * image_mask
 
-        # norm default: log(1 + Relu(x))
-        logits = torch.log1p(torch.relu(logits))  # (B, L, V)
         # Max-pool over sequence dimension → [B, V]
         lex_weights = self.max_pool(logits)  # (B, V)
         return SparseRep(dense=lex_weights).to_dense()

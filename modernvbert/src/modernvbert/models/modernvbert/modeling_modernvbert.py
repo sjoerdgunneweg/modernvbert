@@ -242,6 +242,7 @@ class ModernVBertModel(ModernVBertPreTrainedModel):
         vision_model = AutoModel.from_config(
             vision_model_config, 
             trust_remote_code=True,
+            torch_dtype=config.dtype,
         )
         return getattr(vision_model, "vision_model", vision_model)
 
@@ -254,7 +255,8 @@ class ModernVBertModel(ModernVBertPreTrainedModel):
         )
         text_model = AutoModel.from_config(
             text_model_config, 
-            trust_remote_code=True
+            trust_remote_code=True,
+            torch_dtype=config.dtype,
         )
         embed_layer = DecoupledEmbedding(
             num_embeddings=text_model_config.vocab_size,
@@ -381,7 +383,7 @@ class ModernVBertLMHead(nn.Module):
     def __init__(self, config):
         super().__init__()
         pretrained_config = AutoConfig.from_pretrained(config.text_config.text_model_name, trust_remote_code=True)
-        pretrained_model = AutoModelForMaskedLM.from_config(pretrained_config, trust_remote_code=True)
+        pretrained_model = AutoModelForMaskedLM.from_config(pretrained_config, trust_remote_code=True, torch_dtype=config.dtype)
         self.head = pretrained_model.head
         self.decoder = pretrained_model.decoder
 

@@ -1,8 +1,14 @@
 conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=12.1 -c pytorch -c nvidia
 
+conda uninstall pytorch torchvision torchaudio
+
+pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu121
+
+
 
 https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.1.post1/flash_attn-2.7.1.post1+cu12torch2.4cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
 
+https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.1.post1/flash_attn-2.7.1.post1+cu12torch2.4cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
 
 
 import flash_attn_2_cuda as flash_attn_gpu
@@ -10,3 +16,10 @@ import flash_attn_2_cuda as flash_attn_gpu
 pip install pynvml
 pip install wandb
 pip install transformers==4.53.1
+pip install datasets
+
+
+conda activate modernvbert2
+export TORCH_LIBDIR="$(python -c "import torch, os; print(os.path.join(os.path.dirname(torch.__file__), 'lib'))")"
+export LD_LIBRARY_PATH="$TORCH_LIBDIR:$CONDA_PREFIX/lib:${LD_LIBRARY_PATH}"
+python -c "import flash_attn_2_cuda as f; print('flash-attn import ok')"
