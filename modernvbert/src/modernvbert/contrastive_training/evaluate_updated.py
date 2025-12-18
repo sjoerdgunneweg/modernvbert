@@ -103,6 +103,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Use ViDoRe V2 benchmark instead of ViDoRe V1.",
     )
+    group.add_argument(
+        "--ViDoRe_V3", "-v3",
+        action="store_true",
+        help="Use ViDoRe V3 benchmark instead of ViDoRe V1.",
+    )
 
     return parser.parse_args()
 
