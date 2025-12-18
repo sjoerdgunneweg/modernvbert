@@ -12,7 +12,7 @@ from mteb.benchmarks import Benchmark
 # from mteb.overview import get_tasks
 from mteb.get_tasks import get_tasks
 
-from mteb.models.model_implementations import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models
+from mteb.models.model_implementations import colmodernvbert_models, colqwen_models, colpali_models
 from mteb.model_meta import ModelMeta
 
 from mteb.benchmarks.benchmark import VidoreBenchmark
@@ -22,7 +22,7 @@ from mteb.benchmarks.benchmark import VidoreBenchmark
 
 from config import load_config
 
-MODELS_MODULES = [coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models]
+MODELS_MODULES = [colmodernvbert_models, colqwen_models, colpali_models]
 smolmieb = Benchmark(
     name="MIEB(smol)",
     tasks=get_tasks(
