@@ -168,7 +168,6 @@ def main(cfg, args) -> None:
         )
 
     custom_model = custom_model_meta.load_model(
-        model_name=name,
         device="cuda" if torch.cuda.is_available() else "cpu",
     )
 
