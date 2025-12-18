@@ -9,11 +9,12 @@ from typing import Any, Dict, List, Optional
 import torch
 import mteb
 from mteb.benchmarks import Benchmark
-# from mteb.overview import get_tasks
+# from mteb.overview import get_tasks OLD
 from mteb.get_tasks import get_tasks
 
 from mteb.models.model_implementations import colmodernvbert_models, colqwen_models, colpali_models
-from mteb.model_meta import ModelMeta
+from mteb.models import ModelMeta
+# from mteb.model_meta import ModelMeta OLD
 
 from mteb.benchmarks.benchmark import VidoreBenchmark
 #--------------------------------------------
