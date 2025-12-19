@@ -14,7 +14,7 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
     _supports_sdpa = True
     _supports_cache_class = True
 
-    def __init__(self, config, mask_non_image_embeddings: bool = False, **kwargs):
+    def __init__(self, config, mask_non_image_embeddings: bool = False, scale=5.0,**kwargs):
         super().__init__(config=config)
         self.model = ModernVBertModel(config, **kwargs)
         self.mask_non_image_embeddings = mask_non_image_embeddings
@@ -24,6 +24,7 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
         # Add the MLP head
         hidden_size = self.model.config.text_config.hidden_size
         self.mlp_head = nn.Linear(hidden_size, 1, bias=True)
+        self.scale = nn.Parameter(torch.tensor(float(scale)))
 
 
 
@@ -52,7 +53,9 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
 
         # norm default: log(1 + Relu(x))
         token_weights = torch.log1p(torch.relu(token_weights))  # (B, L)
-
+        token_weights = token_weights * self.scale
         size = torch.tensor((token_weights.size(0), self.vocab_size), device=token_weights.device)
 
-        return SparseRep(indices=safe_input_ids, values=token_weights, size=size).to_dense()
+        return SparseRep(indices=safe_input_ids,
+                         values=token_weights,
+                         size=size).to_dense()

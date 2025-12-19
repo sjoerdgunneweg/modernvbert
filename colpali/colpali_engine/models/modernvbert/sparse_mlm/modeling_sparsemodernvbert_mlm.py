@@ -67,7 +67,7 @@ class SparseModernVBertMLM(ModernVBertPreTrainedModel):
                           external normalization).
         """
         output = self.model(*args, **kwargs)
-        logits = output[0]  # (B, L, V+additional_vocab_size)
+        logits = output.logits # (B, L, V+additional_vocab_size)
         logits = logits[:, :, : self.model.config.text_config.vocab_size]  # (B, L, V)
 
         # Remove padding tokens:
