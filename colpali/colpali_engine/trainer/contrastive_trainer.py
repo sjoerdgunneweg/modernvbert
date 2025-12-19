@@ -193,7 +193,6 @@ class ContrastiveTrainer(Trainer):
             neg_doc_outputs = dict_outputs["neg_d_out"]
         else:
             # === Extract inputs ===
-            assert False, f"{self.query_prefix}, {self.pos_prefix}, {self.neg_prefix}"
             query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
             doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
 
