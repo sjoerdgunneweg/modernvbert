@@ -1,7 +1,7 @@
 import argparse
 import json
 
-ViDoRe_V1_tasks =[
+ViDoRe_V1_TASKS =[
             "VidoreArxivQARetrieval",
             "VidoreDocVQARetrieval",
             "VidoreInfoVQARetrieval",
@@ -14,11 +14,24 @@ ViDoRe_V1_tasks =[
             "VidoreSyntheticDocQAHealthcareIndustryRetrieval",
         ]
 
-ViDoRe_V2_tasks = [
+ViDoRe_V2_TASKS = [
             "Vidore2ESGReportsRetrieval",
             "Vidore2EconomicsReportsRetrieval",
             "Vidore2BioMedicalLecturesRetrieval",
             "Vidore2ESGReportsHLRetrieval",
+        ]
+
+ViDoRe_V3_TASKS = [
+            "Vidore3FinanceEnRetrieval",
+            "Vidore3IndustrialRetrieval",
+            "Vidore3ComputerScienceRetrieval",
+            "Vidore3PharmaceuticalsRetrieval",
+            "Vidore3HrRetrieval",
+            "Vidore3FinanceFrRetrieval",
+            "Vidore3PhysicsRetrieval",
+            "Vidore3EnergyRetrieval",
+            # "Vidore3TelecomRetrieval", # NOTE: these two datasets are disabled since no acces to these private datasets
+            # "Vidore3NuclearRetrieval",
         ]
 
 def json_reader(filepath, task_name):
@@ -35,9 +48,11 @@ def get_model_name_from_path(filepath):
 def main(args):
     print("Aggregating nCDG@5 scores of model: " + get_model_name_from_path(args.filepath) + " over benchmark: " + args.benchmark)
     if args.benchmark == "ViDoRe_V1":
-        task_list = ViDoRe_V1_tasks
+        task_list = ViDoRe_V1_TASKS
     elif args.benchmark == "ViDoRe_V2":
-        task_list = ViDoRe_V2_tasks
+        task_list = ViDoRe_V2_TASKS
+    elif args.benchmark == "ViDoRe_V3":
+        task_list = ViDoRe_V3_TASKS
     else:
         raise ValueError(f"Unknown benchmark: {args.benchmark}")
 
@@ -58,7 +73,7 @@ if __name__ == "__main__":
         "--benchmark", "-b",
         type=str,
         required=True,
-        choices=["ViDoRe_V1", "ViDoRe_V2"],
+        choices=["ViDoRe_V1", "ViDoRe_V2", "ViDoRe_V3"],
         help="List of tasks to aggregate nCDG@5 over.",
     )
     args = args.parse_args()
