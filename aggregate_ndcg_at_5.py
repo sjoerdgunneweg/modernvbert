@@ -27,11 +27,11 @@ ViDoRe_V3_TASKS = [
             "Vidore3ComputerScienceRetrieval",
             "Vidore3PharmaceuticalsRetrieval",
             "Vidore3HrRetrieval",
-            "Vidore3FinanceFrRetrieval",
-            "Vidore3PhysicsRetrieval",
-            "Vidore3EnergyRetrieval",
-            # "Vidore3TelecomRetrieval", # NOTE: these two datasets are disabled since no acces to these private datasets
-            # "Vidore3NuclearRetrieval",
+            # "Vidore3FinanceFrRetrieval", # NOTE: commented out since not English
+            # "Vidore3PhysicsRetrieval", # NOTE: commented out since not English
+            # "Vidore3EnergyRetrieval", # NOTE: commented out since not English
+            # "Vidore3TelecomRetrieval", # NOTE: this datasets disabled since no acces to these private datasets
+            # "Vidore3NuclearRetrieval", # NOTE: this datasets disabled since no acces to these private datasets
         ]
 
 def json_reader(filepath, task_name):

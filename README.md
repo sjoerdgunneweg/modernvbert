@@ -43,6 +43,19 @@ pip install dacite
 pip install timm
 ```
 
+Then run the aggregate script to get the aggregated results:
+
+```bash
+cd modernvbert
+python aggregate_ndcg_at_5.py -f <PATH TO RESULTS> -b <BENCHMARK, CHOOSE FROM {ViDoRe_V1,ViDoRe_V2,ViDoRe_V3}>
+```
+
+Example:
+```bash
+python aggregate_ndcg_at_5.py -f results/ModernVBERT__colmodernvbert/no_revision_available -b ViDoRe_V1
+```
+
+
 ### ViDoRe Leaderboard Repdruction Results
 
 | Model | Late Interaction | Model Size (B) | ViDoRe (v1) | ViDoRe (v2, eng) | Average | Latency (s) |
