@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_a100
+#SBATCH --partition=gpu_h100
 #SBATCH --gpus=4
 #SBATCH --job-name=Col_Contrastive_training
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=72
+#SBATCH --cpus-per-task=64
 #SBATCH --time=60:00:00
 #SBATCH --output=output/eval_%A.out
 

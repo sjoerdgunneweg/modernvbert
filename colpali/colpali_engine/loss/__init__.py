@@ -21,8 +21,9 @@ from .late_interaction_losses import (
 )
 
 from .sparse_encoder_losses import (
-    SparseBiEncoderLoss,
     SparseBiEncoderModule,
     SparseBiNegativeCELoss,
+    SparseM2BiNegativeCELoss,
+    SparseMLMBiNegativeCELoss,
 )
 
