@@ -186,7 +186,7 @@ class ContrastiveTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         model_class_name = model.__class__.__name__
-        if not (model_class_name == "SparseModernVBertM2"):
+        if (model_class_name == "SparseModernVBertM2"):
             dict_outputs = model(**inputs)
             query_outputs = dict_outputs["q_out"]
             doc_outputs = dict_outputs["d_out"]
