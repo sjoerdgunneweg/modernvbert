@@ -14,7 +14,7 @@ class SparseModernVBertMLP(ModernVBertPreTrainedModel):
     _supports_sdpa = True
     _supports_cache_class = True
 
-    def __init__(self, config, mask_non_image_embeddings: bool = False, scale=5.0,**kwargs):
+    def __init__(self, config, mask_non_image_embeddings: bool = False, scale=10.0,**kwargs):
         super().__init__(config=config)
         self.model = ModernVBertModel(config, **kwargs)
         self.mask_non_image_embeddings = mask_non_image_embeddings
