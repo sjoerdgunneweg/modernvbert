@@ -262,11 +262,10 @@ def main(cfg, args) -> None:
                 "Vidore3FinanceFrRetrieval",
                 "Vidore3PhysicsRetrieval",
                 "Vidore3EnergyRetrieval",
-                "Vidore3TelecomRetrieval",
-                "Vidore3NuclearRetrieval",
+                # "Vidore3TelecomRetrieval", # these two datasets are disabled since no acces to these private datasets
+                # "Vidore3NuclearRetrieval",
             ],
             languages=["eng"], # set to english only as mentioned in the paper
-            exclude_private=False, # to include Telecom and Nuclear datasets
         ),
         description="ViDoRe V3 sets a new industry gold standard for multi-modal, enterprise document visual retrieval evaluation. It addresses a critical challenge in production RAG systems: retrieving accurate information from complex, visually-rich documents. The benchmark includes both open and closed datasets: to submit results on private tasks, please [open an issue](https://github.com/embeddings-benchmark/mteb/issues?template=eval_request.yaml).",
         reference="https://huggingface.co/blog/QuentinJG/introducing-vidore-v3",
