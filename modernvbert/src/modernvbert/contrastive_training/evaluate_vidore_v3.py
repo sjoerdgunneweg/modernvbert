@@ -63,7 +63,7 @@ def main(cfg) -> None:
         name=name,
         modalities=["image", "text"],
         framework=cfg.eval_config.framework,
-        similarity_fn_name=cfg.eval_config.similarity_fn_name,
+        similarity_fn_name=cfg.eval_config.similarity_fn_name_vidore_v3,
         use_instructions=True,
         revision=None,
         release_date=None,
