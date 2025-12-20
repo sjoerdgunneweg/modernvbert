@@ -38,13 +38,13 @@ Key contributions:
 
 ## Models
 
-| Model                        | Late Interaction | Sparse | Params (B) | ViDoRe v1 | ViDoRe v2 (EN) |
-| ---------------------------- | :--------------: | :----: | :--------: | :-------: | :------------: |
-| ColPali                      |         ✓        |    –   |    2.92    |    70.3   |      45.4      |
-| ColQwen2.5                   |         ✓        |    –   |    3.75    |    89.6   |      61.9      |
-| BiModernVBERT                |         –        |    –   |    0.25    |    63.6   |      35.7      |
-| ColModernVBERT               |         ✓        |    –   |    0.25    |    80.4   |      55.3      |
-| **SparseModernVBERT (ours)** |         ✓        |    ✓   |    0.25    |    TBD    |       TBD      |
+| Model                        | Late Interaction | Sparse | Params (B) | ViDoRe v1 | ViDoRe v2 (EN) | ViDoRe v3 |
+| ---------------------------- | :--------------: | :----: | :--------: | :-------: | :------------: | :-------: |
+| ColPali                      |         ✓        |   –    |    2.92    |   70.3    |      45.4      |   48.9    |
+| ColQwen2.5                   |         ✓        |   –    |    3.75    |   89.6    |      61.9      |   59.6    |
+| BiModernVBERT                |         –        |   –    |    0.25    |   63.6    |      35.7      |   30.1    |
+| ColModernVBERT               |         ✓        |   –    |    0.25    |   80.4    |      55.3      |   44.1    |
+| **SparseModernVBERT (ours)** |         ✓        |   ✓    |    0.25    |   TBD     |      TBD       |   TBD     |
 
 ---
 
