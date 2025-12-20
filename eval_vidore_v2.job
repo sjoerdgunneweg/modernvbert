@@ -20,4 +20,4 @@ cd $HOME/modernvbert
 # Activate your environment
 source activate modernvbert_vidore_v3
 # Run your code
-srun python modernvbert/src/modernvbert/contrastive_training/evaluate_updated.py --config configs/evaluation/eval_colmodernvbert.yaml --ViDoRe_V2
+srun python modernvbert/src/modernvbert/contrastive_training/evaluate.py --config configs/evaluation/eval_colmodernvbert.yaml --ViDoRe_V2
