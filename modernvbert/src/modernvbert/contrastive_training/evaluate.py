@@ -12,8 +12,6 @@ from mteb.benchmarks import Benchmark
 from mteb.overview import get_tasks
 from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models
 from mteb.model_meta import ModelMeta
-
-from mteb.benchmarks.benchmark import VidoreBenchmark
 #--------------------------------------------
 # from mteb.benchmarks import VIDORE, VIDORE_V2 # NOTE: commented out since these are not in mteb-vlm package
 #--------------------------------------------
@@ -232,57 +230,12 @@ def main(cfg, args) -> None:
     }
     """,
     )
-    
-    VIDORE_V3 = VidoreBenchmark(
-        name="ViDoRe(v3)",
-        display_name="ViDoRe V3",
-        language_view=[
-            "deu-Latn",
-            "eng-Latn",
-            "fra-Latn",
-            "ita-Latn",
-            "por-Latn",
-            "spa-Latn",
-        ],
-        icon="https://cdn-uploads.huggingface.co/production/uploads/66e16a677c2eb2da5109fb5c/x99xqw__fl2UaPbiIdC_f.png",
-        tasks=get_tasks(
-            tasks=[
-                "Vidore3FinanceEnRetrieval",
-                "Vidore3IndustrialRetrieval",
-                "Vidore3ComputerScienceRetrieval",
-                "Vidore3PharmaceuticalsRetrieval",
-                "Vidore3HrRetrieval",
-                "Vidore3FinanceFrRetrieval",
-                "Vidore3PhysicsRetrieval",
-                "Vidore3EnergyRetrieval",
-                "Vidore3TelecomRetrieval",
-                "Vidore3NuclearRetrieval",
-            ],
-            languages=["eng"], # NOTE: set to english only as mentioned in the paper
-        ),
-        description="ViDoRe V3 sets a new industry gold standard for multi-modal, enterprise document visual retrieval evaluation. It addresses a critical challenge in production RAG systems: retrieving accurate information from complex, visually-rich documents. The benchmark includes both open and closed datasets: to submit results on private tasks, please [open an issue](https://github.com/embeddings-benchmark/mteb/issues?template=eval_request.yaml).",
-        reference="https://huggingface.co/blog/QuentinJG/introducing-vidore-v3",
-        citation=r"""
-    @misc{mace2025vidorev3,
-    author = {Macé, Quentin and Loison, Antonio and EDY, Antoine and Xing, Victor and Viaud, Gautier},
-    day = {5},
-    howpublished = {\url{https://huggingface.co/blog/QuentinJG/introducing-vidore-v3}},
-    journal = {Hugging Face Blog},
-    month = {November},
-    publisher = {Hugging Face},
-    title = {ViDoRe V3: a comprehensive evaluation of retrieval for enterprise use-cases},
-    year = {2025},
-    }
-    """,
-    )
 
 #-----------------------------------------------------------------------------------------
     if args.ViDoRe_V1:
         tasks = VIDORE
     elif args.ViDoRe_V2:
         tasks = VIDORE_V2
-    elif args.ViDoRe_V3:
-        tasks = VIDORE_V3
 #-----------------------------------------------------------------------------------------
 
     print(f"Tasks loaded: {tasks}")
