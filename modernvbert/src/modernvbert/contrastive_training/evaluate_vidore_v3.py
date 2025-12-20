@@ -156,4 +156,4 @@ def main(cfg) -> None:
 if __name__ == "__main__":
     args = parse_args()
     cfg = load_config(args.config)
-    main(cfg, args)
+    main(cfg)
