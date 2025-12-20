@@ -188,6 +188,7 @@ class ContrastiveTrainer(Trainer):
         model_class_name = model.__class__.__name__
 
         print("prefixes:", self.query_prefix, self.pos_prefix, self.neg_prefix)
+        print(model_class_name)
         if (model_class_name == "SparseModernVBertM2"):
             dict_outputs = model(**inputs)
             query_outputs = dict_outputs["q_out"]
