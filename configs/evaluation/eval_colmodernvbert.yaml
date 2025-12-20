@@ -9,4 +9,5 @@ eval_config:
   encode_kwargs: {}
   framework: ["ColPali"]
   similarity_fn_name: "max_sim"
+  similarity_fn_name_vidore_v3: "MaxSim"
   attn_implementation: "flash_attention_2"

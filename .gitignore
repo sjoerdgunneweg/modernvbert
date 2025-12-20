@@ -180,3 +180,4 @@ wandb/
 
 # results
 results/
+results_*/

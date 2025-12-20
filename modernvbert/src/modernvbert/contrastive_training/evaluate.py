@@ -12,9 +12,8 @@ from mteb.benchmarks import Benchmark
 from mteb.overview import get_tasks
 from mteb.models import coleurovbert_models, colmodernvbert_models, colvllama_models, colqwen_models, colpali_models, jina_models, jina_clip, colflor_models
 from mteb.model_meta import ModelMeta
-
 #--------------------------------------------
-# from mteb.benchmarks import VIDORE, VIDORE_V2
+# from mteb.benchmarks import VIDORE, VIDORE_V2 # NOTE: commented out since these are not in mteb-vlm package
 #--------------------------------------------
 
 from config import load_config
@@ -128,11 +127,12 @@ def main(cfg, args) -> None:
     else:
         model_name_or_path = cfg.tr_args.output_dir + "/final"
 
-    # if len(model_name_or_path.split("/")) > 2: # TODO: only removed this since path of locally saved model is longer than 2
+    # if len(model_name_or_path.split("/")) > 2: # NOTE: removed this since path of locally saved model is longer than 2
     #     name = f"SmolVEncoder/{model_name_or_path.split('/')[-2]}"
     # else:
         # name = model_name_or_path.split("/")[-1]
-    name = model_name_or_path # TODO can i really leave it like this?
+
+    name = model_name_or_path
 
     print(f"Model class: {model_class}")
     print(f"Model name:  {name}")
@@ -140,7 +140,7 @@ def main(cfg, args) -> None:
     custom_model_meta = ModelMeta(
         loader=model_class,
         name=name,
-        modalities=["image", "text"], # TODO is this always constant?
+        modalities=["image", "text"],
         framework=cfg.eval_config.framework,
         similarity_fn_name=cfg.eval_config.similarity_fn_name,
         use_instructions=True,
@@ -172,9 +172,8 @@ def main(cfg, args) -> None:
         custom_model.processor.image_processor.size["longest_edge"] = cfg.eval_config.encode_kwargs.pop("max_image_size", 2048)
         custom_model.processor.image_processor.do_resize = cfg.eval_config.encode_kwargs.pop("do_resize", True)
 
-
     # --- Load tasks ---
-    # tasks = mteb.get_tasks(tasks=cfg.eval_config.tasks)
+    # tasks = mteb.get_tasks(tasks=cfg.eval_config.tasks) # NOTE: this is unnused, came from original evaluate.py
     # tasks = smolmieb
 
     #-----------------------------------------------------------------------------------------
@@ -194,7 +193,7 @@ def main(cfg, args) -> None:
                 "VidoreSyntheticDocQAGovernmentReportsRetrieval",
                 "VidoreSyntheticDocQAHealthcareIndustryRetrieval",
             ],
-            languages=["eng"],
+            languages=["eng"], # NOTE: set to english only as mentioned in the paper
         ),
         description="Retrieve associated pages according to questions.",
         reference="https://arxiv.org/abs/2407.01449",
@@ -218,7 +217,7 @@ def main(cfg, args) -> None:
                 "Vidore2BioMedicalLecturesRetrieval",
                 "Vidore2ESGReportsHLRetrieval",
             ],
-            languages=["eng"],
+            languages=["eng"], # NOTE: set to english only as mentioned in the paper
         ),
         description="Retrieve associated pages according to questions.",
         reference="https://arxiv.org/abs/2407.01449",
@@ -232,10 +231,12 @@ def main(cfg, args) -> None:
     """,
     )
 
+#-----------------------------------------------------------------------------------------
     if args.ViDoRe_V1:
         tasks = VIDORE
     elif args.ViDoRe_V2:
         tasks = VIDORE_V2
+#-----------------------------------------------------------------------------------------
 
     print(f"Tasks loaded: {tasks}")
     evaluator = mteb.MTEB(tasks=tasks)
