@@ -1,5 +1,10 @@
 # SparseModernVBERT: A Sparse Visual Document Retriever 📄👁️
 
+<p align="center">
+  <img src="banner.png" alt="SparseModernVBERT banner" width="100%">
+</p>
+
+
 [![arXiv](https://img.shields.io/badge/arXiv-TBD-b31b1b.svg?style=for-the-badge)](TBD)
 [![ViDoRe](https://img.shields.io/badge/ViDoRe_Benchmark-100000?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/illuin-tech/vidore-benchmark)
 [![Code](https://img.shields.io/badge/Code-Reproducibility-blue?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/illuin-tech/modernvbert)
