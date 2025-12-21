@@ -18,7 +18,6 @@ This repository contains the **reproducibility study and sparse extension** acco
 
 The paper builds upon **ModernVBERT** and introduces a learned sparse retrieval formulation for **visual document retrieval (VDR)**. In addition, this repository provides a *faithful reproduction* of previously reported ModernVBERT and ColModernVBERT results on the ViDoRe benchmarks.
 
----
 
 ## Introduction
 
@@ -34,10 +33,6 @@ Key contributions:
 * A new **learned sparse retrieval (LSR)** formulation for visual document retrieval
 * Extensive evaluation across dense, late-interaction, and sparse settings
 
-# TODO zet v3 hier nog tussen
-
----
-
 ## Models
 
 | Model                        | Late Interaction | Sparse | Params (B) | ViDoRe v1 | ViDoRe v2 (EN) | ViDoRe v3 |
@@ -48,7 +43,6 @@ Key contributions:
 | ColModernVBERT               |         ✓        |   –    |    0.25    |   80.4    |      55.3      |   44.1    |
 | **SparseModernVBERT (ours)** |         ✓        |   ✓    |    0.25    |   TBD     |      TBD       |   TBD     |
 
----
 
 ## Setup
 
@@ -74,7 +68,6 @@ pip install flash-attn --no-build-isolation
 pip install wandb
 ```
 
----
 
 ## Evaluation
 
@@ -125,9 +118,6 @@ python aggregate_ndcg_at_5.py -f <PATH_TO_RESULTS> -b <ViDoRe_V1|ViDoRe_V2|ViDoR
 ```
 
 
-
----
-
 ## Reproducibility Notes ⚠️
 
 During reproduction, we identified several issues in the original ModernVBERT evaluation pipeline:
@@ -138,7 +128,6 @@ During reproduction, we identified several issues in the original ModernVBERT ev
 
 We provide a **corrected evaluation pipeline** and report both uncorrected and corrected results in the paper.
 
----
 
 ## Citation
 
@@ -158,7 +147,6 @@ If you use this repository, please cite the original works:
 }
 ```
 
----
 
 ## Acknowledgements
 
