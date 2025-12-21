@@ -118,7 +118,7 @@ python aggregate_ndcg_at_5.py -f <PATH_TO_RESULTS> -b <ViDoRe_V1|ViDoRe_V2|ViDoR
 ```
 
 
-## Reproducibility Notes ⚠️
+## ⚠️ Reproducibility Notes
 
 During reproduction, we identified several issues in the original ModernVBERT evaluation pipeline:
 
