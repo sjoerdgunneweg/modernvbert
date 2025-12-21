@@ -1,17 +1,12 @@
-# SparseModernVBERT: A Sparse Visual Document Retriever 📄👁️
-
-<p align="center">
-  <img src="banner.png" alt="SparseModernVBERT banner" width="100%">
-</p>
+# SparseModernVBERT: A Sparse Visual Document Retriever 
 
 
-[![arXiv](https://img.shields.io/badge/arXiv-TBD-b31b1b.svg?style=for-the-badge)](TBD)
-[![ViDoRe](https://img.shields.io/badge/ViDoRe_Benchmark-100000?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/illuin-tech/vidore-benchmark)
-[![Code](https://img.shields.io/badge/Code-Reproducibility-blue?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/illuin-tech/modernvbert)
+<!-- [![ViDoRe](https://img.shields.io/badge/MTEB_ModernVBERT-100000?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/sjoerdgunneweg/mteb_modernvbert) -->
 
----
+<!-- [![Code](https://img.shields.io/badge/Code-Reproducibility-blue?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/illuin-tech/modernvbert) -->
 
-[[Paper]](TBD)
+[[Source Paper]](https://arxiv.org/abs/2510.01149)
+[[Source Codebase]](https://github.com/illuin-tech/modernvbert)
 [[ViDoRe Leaderboard]](https://huggingface.co/spaces/vidore/vidore-leaderboard)
 
 ## Associated Paper
@@ -20,7 +15,6 @@ This repository contains the **reproducibility study and sparse extension** acco
 
 > **SparseModernVBERT: A Sparse Visual Document Retriever**
 > Ruben Figge, Sjoerd Gunneweg, Ken Maradiaga Rosales
-> SIGIR 2026 (under submission)
 
 The paper builds upon **ModernVBERT** and introduces a learned sparse retrieval formulation for **visual document retrieval (VDR)**. In addition, this repository provides a *faithful reproduction* of previously reported ModernVBERT and ColModernVBERT results on the ViDoRe benchmarks.
 
@@ -34,10 +28,13 @@ In this work, we introduce **SparseModernVBERT**, a sparse visual retriever buil
 
 Key contributions:
 
-* A **reproducibility study** of ModernVBERT and ColModernVBERT on ViDoRe v1/v2/v3
+* A **reproducibility study** of ModernVBERT and ColModernVBERT on ViDoRe v1 and v2
 * Identification and correction of **evaluation and precision inconsistencies**
+* An extension of the evaluation to **ViDoRe v3**
 * A new **learned sparse retrieval (LSR)** formulation for visual document retrieval
 * Extensive evaluation across dense, late-interaction, and sparse settings
+
+# TODO zet v3 hier nog tussen
 
 ---
 
@@ -81,7 +78,9 @@ pip install wandb
 
 ## Evaluation
 
-Evaluation follows the **ModernVBERT / ColPali ViDoRe protocol** using the VBERT branch of MTEB.
+### ViDoRe v1 & ViDoRe v2 Evaluation
+
+Evaluation follows the **ModernVBERT ViDoRe protocol** using their fork of MTEB: [[mteb-vlm]](https://github.com/paultltc/mteb-vlm)
 
 ```bash
 git clone git@github.com:paultltc/mteb-vlm.git
@@ -91,12 +90,41 @@ pip install -e .
 pip install dacite timm
 ```
 
-Aggregate results:
+Run the ViDoRe v1/v2 evaluation:
+```bash
+python modernvbert/src/modernvbert/contrastive_training/evaluate.py --config configs/evaluation/<CONFIG FILE> --<ViDoRe_V1|ViDoRe_V2>
+```
+
+
+### ViDoRe v3 Evaluation
+
+MTEB-VLM does not yet support ViDoRe v3. Therefore, we use a more recent fork of MTEB: [[mteb_modernvbert]](https://github.com/sjoerdgunneweg/mteb_modernvbert)
+
+First, uninstall `mteb-vlm`:
+```bash
+pip uninstall mteb
+```
+The install the updated fork:
+```bash
+git clone git@github.com:sjoerdgunneweg/mteb_modernvbert.git
+cd mteb_modernvbert
+git switch vbert
+pip install -e .
+```
+
+Run the ViDoRe v3 evaluation (note: no `ViDoRe_V3` flag required):
+```bash
+python modernvbert/src/modernvbert/contrastive_training/evaluate_vidore_v3.py --config configs/evaluation/eval_colmodernvbert.yaml
+```
+
+### Aggregate the results:
 
 ```bash
 cd modernvbert
 python aggregate_ndcg_at_5.py -f <PATH_TO_RESULTS> -b <ViDoRe_V1|ViDoRe_V2|ViDoRe_V3>
 ```
+
+
 
 ---
 
@@ -114,18 +142,7 @@ We provide a **corrected evaluation pipeline** and report both uncorrected and c
 
 ## Citation
 
-If you use this repository, please cite:
-
-```bibtex
-@misc{figge2026sparsemodernvbert,
-  title={SparseModernVBERT: A Sparse Visual Document Retriever},
-  author={Figge, Ruben and Gunneweg, Sjoerd and Maradiaga Rosales, Ken},
-  year={2026},
-  note={Under submission}
-}
-```
-
-And the original works:
+If you use this repository, please cite the original works:
 
 ```bibtex
 @misc{teiletche2025modernvbert,
@@ -145,4 +162,4 @@ And the original works:
 
 ## Acknowledgements
 
-This work builds directly on **ModernVBERT**, **ColPali**, and the **ViDoRe benchmark**. We thank the original authors for releasing their code and for their assistance with reproduction questions.
+This work builds directly on **ModernVBERT** and **ColPali**. We thank the original authors for releasing their code and for their assistance with reproduction questions.
