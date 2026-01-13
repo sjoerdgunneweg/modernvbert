@@ -27,5 +27,5 @@ from .models import (
     SparseModernVBertMLPProcessor,
     SparseModernVBertM2,
     SparseModernVBertM2Processor,
-
+    SparseModernVBertM2SpladeModernBERT,
 )
