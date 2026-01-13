@@ -327,7 +327,7 @@ class SparseMLMBiNegativeCELoss(SparseBiEncoderModule):
 
         # Avoid module instances as default args; create them per-loss instance.
         self.q_regularizer = q_regularizer or FLOPs(weight=0.001, T=10000)
-        self.d_regularizer = d_regularizer or FLOPs(weight=0.01, T=10000)
+        self.d_regularizer = d_regularizer or FLOPs(weight=0.5, T=10000)
 
         self.in_batch_loss_fn = BiEncoderLoss(
             temperature=temperature,

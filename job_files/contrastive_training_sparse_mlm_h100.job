@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=64
 #SBATCH --time=60:00:00
-#SBATCH --output=output/contrastive_sparse_%A.out
+#SBATCH --output=output/contrastive_sparse_mlm_0.5d_0.001q%A.out
 
 
 module purge
