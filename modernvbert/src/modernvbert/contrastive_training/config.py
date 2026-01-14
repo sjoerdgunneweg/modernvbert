@@ -14,6 +14,8 @@ from colpali_engine.data import ColPaliEngineDataset
 from colpali_engine.collators import VisualRetrieverCollator
 from colpali_engine.trainer import ContrastiveTrainer
 
+from transformers import AutoTokenizer
+
 from loaders import *
 
 @dataclass
@@ -146,6 +148,11 @@ class ColbertTrainingArguments:
 
         # Load the processor
         processor = self.model_args.load_processor()
+
+        if model.base_model.model._class_._name_ == "SparseModernVBertM2SpladeModernBERT":
+            print("Loading SPLADE tokenizer for SparseModernVBertM2SpladeModernBERT model...")
+            splade_tokenizer = AutoTokenizer.from_pretrained("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
+            processor.tokenizer = splade_tokenizer 
 
         # Resolve the loss func
         loss_fn = getattr(colpali_losses, self.model_args.loss_type)()
