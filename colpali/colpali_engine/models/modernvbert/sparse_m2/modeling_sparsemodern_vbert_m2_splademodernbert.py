@@ -3,7 +3,7 @@ from colpali_engine.models.modernvbert.modeling_modernvbert import ModernVBertPr
 
 from colpali_engine.models.modernvbert.sparse_mlp.modeling_sparsemodernvbert_mlp import SparseModernVBertMLP
 from colpali_engine.models.modernvbert.sparse_mlm.modeling_sparsemodernvbert_mlm import SparseModernVBertMLM
-from transformers import ModernBertForMaskedLM # TODO check if maybe this way works better
+from transformers import ModernBertForMaskedLM
 
 
 
@@ -17,8 +17,7 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
 
     def __init__(self, config, mask_non_image_embeddings: bool = False, **kwargs):
         super().__init__(config=config)
-        self.text_encoder = ModernBertForMaskedLM.from_pretrained("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64") # TODO check if maybe this way works better
-        # self.text_encoder = SparseEncoder("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
+        self.text_encoder = ModernBertForMaskedLM.from_pretrained("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
         self.vision_encoder = SparseModernVBertMLM(config, mask_non_image_embeddings, **kwargs)
         self.main_input_name = "doc_input_ids"
 
@@ -59,9 +58,10 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
             neg_doc_inputs = self._reshape_neg_doc_inputs(kwargs)
 
         #== Encode query (text) ===
-        # query_outputs = self.text_encoder(**query_inputs)
-        query_outputs = self.text_encoder(query_inputs)["token_embeddings"]
+        print("query_inputs:", query_inputs)
+        query_outputs = self.text_encoder(**query_inputs)
 
+        print("query_outputs:", query_outputs)
         #=== Encode doc (vision) ===
         doc_outputs = self.vision_encoder(**doc_inputs)
 
