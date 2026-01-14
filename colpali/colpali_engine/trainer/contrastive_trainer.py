@@ -202,6 +202,7 @@ class ContrastiveTrainer(Trainer):
                 neg_doc_outputs = model(**neg_doc_inputs)
                 neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
         else:
+            print("Jo ik kom hierin KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAS")
             dict_outputs = model(**inputs)
             query_outputs = dict_outputs["q_out"]
             doc_outputs = dict_outputs["d_out"]
