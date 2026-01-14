@@ -186,6 +186,7 @@ class ContrastiveTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         model_class_name = model.__class__.__name__
+        print("Worst trainer ever used, model class name:", model_class_name)
         if not ((model_class_name == "SparseModernVBertM2") or (model_class_name == "SparseModernVBertM2SpladeModernBERT")):
             # === Extract inputs ===
             query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
@@ -202,6 +203,7 @@ class ContrastiveTrainer(Trainer):
                 neg_doc_outputs = model(**neg_doc_inputs)
                 neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
         else:
+            print("Jo ik kom hierin KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAS")
             dict_outputs = model(**inputs)
             query_outputs = dict_outputs["q_out"]
             doc_outputs = dict_outputs["d_out"]
