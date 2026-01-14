@@ -51,6 +51,7 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
         query_inputs = {k[len(self.query_prefix):]: v for k, v in kwargs.items() if k.startswith(self.query_prefix)}
         doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in kwargs.items() if k.startswith(self.pos_prefix)}
 
+        print("model_name", self.__class__.__name__)
         print("kwargs: ", kwargs.items())
 
         # === Hard negatives ===
