@@ -20,6 +20,9 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
         super().__init__(config=config)
         # self.text_encoder = ModernBertForMaskedLM.from_pretrained("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
         self.text_encoder = SparseEncoder("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
+
+        self.text_encoder.to("cuda" if torch.cuda.is_available() else "cpu")
+
         self.vision_encoder = SparseModernVBertMLM(config, mask_non_image_embeddings, **kwargs)
         self.main_input_name = "doc_input_ids"
 
