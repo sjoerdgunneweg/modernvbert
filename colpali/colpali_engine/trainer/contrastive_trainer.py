@@ -185,7 +185,7 @@ class ContrastiveTrainer(Trainer):
         return neg_doc_outputs
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        model_class_name = model.__class__.__name__
+        model_class_name = model.base_model.model.__class__.__name__
         print("Worst trainer ever used, model class name:", model_class_name)
         if not ((model_class_name == "SparseModernVBertM2") or (model_class_name == "SparseModernVBertM2SpladeModernBERT")):
             # === Extract inputs ===
