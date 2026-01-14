@@ -5,7 +5,7 @@ from colpali_engine.models.modernvbert.sparse_mlp.modeling_sparsemodernvbert_mlp
 from colpali_engine.models.modernvbert.sparse_mlm.modeling_sparsemodernvbert_mlm import SparseModernVBertMLM
 from transformers import ModernBertForMaskedLM
 
-from sentence-transformers import SparseEncoder
+from sentence_transformers import SparseEncoder
 
 
 
