@@ -8,12 +8,15 @@ from colpali_engine.models import (
     SparseModernVBertM2,
     SparseModernVBertM2Processor,
     SparseModernVBertMLM,
-    SparseModernVBertMLMProcessor
+    SparseModernVBertMLMProcessor,
+    SparseModernVBertM2SpladeModernBERT,
+    SparseModernVBertM2SpladeModernBERTProcessor,
 )
 from colpali_engine.models.modernvbert.configuration_modernvbert import ModernVBertConfig
 
 m2_checkpoint_path = Path("/home/scur1709/modernvbert/models/sparsemodernvbertm2_initialization")
 mlm_checkpoint_path = Path("/home/scur1709/modernvbert/models/sparsemodernvbertmlm_initialization")
+m2_splade_checkpoint_path = Path("/home/scur1709/modernvbert/models/sparsemodernvbertm2_splade_initialization")
 
 def map_m2_weights(source_sd: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     """Mapping logic for the M2 architecture."""
@@ -24,6 +27,17 @@ def map_m2_weights(source_sd: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor
         # B. Map to Text Encoder (Strip 'model.' prefix)
         if key.startswith("model."):
             new_sd[f"text_encoder.model.{key[6:]}"] = value.clone()
+    return new_sd
+
+def map_m2_splade_weights(source_sd: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    """Mapping logic for the M2 splademodernvbert architecture."""
+    new_sd = {}
+    for key, value in source_sd.items():
+        # A. Map to Vision Encoder (1:1 with prefix)
+        new_sd[f"vision_encoder.model.{key}"] = value.clone()
+        # # B. Map to Text Encoder (Strip 'model.' prefix)
+        # if key.startswith("model."):
+        #     new_sd[f"text_encoder.model.{key[6:]}"] = value.clone()
     return new_sd
 
 def map_mlm_weights(source_sd: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
@@ -43,6 +57,12 @@ MODEL_REGISTRY = {
         "processor_cls": SparseModernVBertMLMProcessor,
         "mapper": map_mlm_weights,
         "default_path": str(mlm_checkpoint_path)
+    },
+    "m2_splade": {
+        "model_cls": SparseModernVBertM2SpladeModernBERT,
+        "processor_cls": SparseModernVBertM2SpladeModernBERTProcessor,
+        "mapper": map_m2_splade_weights,
+        "default_path": str(m2_splade_checkpoint_path)
     }
 }
 
@@ -80,7 +100,7 @@ def initialize_sparse_model(model_type: str, base_ckpt: str = "ModernVBERT/moder
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize Sparse ModernVBERT models.")
-    parser.add_argument("--type", type=str, choices=["m2", "mlm", "all"], default="all",
+    parser.add_argument("--type", type=str, choices=["m2", "m2_splade", "mlm", "all"], default="all",
                         help="Which model variant to initialize")
     parser.add_argument("--base_ckpt", type=str, default="ModernVBERT/modernvbert")
     args = parser.parse_args()
