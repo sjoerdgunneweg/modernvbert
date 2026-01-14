@@ -63,7 +63,7 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
         #== Encode query (text) ===
         print("query_inputs:", query_inputs)
         print("doc_inputs:", doc_inputs)
-        query_outputs = self.text_encoder(**query_inputs)
+        query_outputs = self.text_encoder(**query_inputs)["token_embeddings"]
 
         print("query_outputs:", query_outputs)
         #=== Encode doc (vision) ===
