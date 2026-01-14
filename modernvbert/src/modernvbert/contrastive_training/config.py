@@ -149,7 +149,7 @@ class ColbertTrainingArguments:
         # Load the processor
         processor = self.model_args.load_processor()
 
-        if model.base_model.model._class_._name_ == "SparseModernVBertM2SpladeModernBERT":
+        if model.base_model.model.__class__.__name__ == "SparseModernVBertM2SpladeModernBERT":
             print("Loading SPLADE tokenizer for SparseModernVBertM2SpladeModernBERT model...")
             splade_tokenizer = AutoTokenizer.from_pretrained("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
             processor.tokenizer = splade_tokenizer 
