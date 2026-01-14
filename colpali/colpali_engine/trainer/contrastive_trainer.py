@@ -186,7 +186,7 @@ class ContrastiveTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         model_class_name = model.__class__.__name__
-        if not (model_class_name == "SparseModernVBertM2"):
+        if not ((model_class_name == "SparseModernVBertM2") or (model_class_name == "SparseModernVBertM2SpladeModernBERT")):
             # === Extract inputs ===
             query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
             doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
