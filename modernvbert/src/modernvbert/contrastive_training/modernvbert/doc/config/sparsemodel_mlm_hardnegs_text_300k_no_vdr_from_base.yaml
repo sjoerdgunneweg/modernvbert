@@ -34,7 +34,7 @@ tr_args:
   save_total_limit: 50
   logging_steps: 10
   warmup_ratio: 0.1
-  learning_rate: 0.0000002
+  learning_rate: 0.00002
   run_name: sparsemodernvbertmlm_hardnegs_text_300k_from_base
   report_to: wandb
   use_symmetric_loss: false # No symmetric loss with hard negatives
