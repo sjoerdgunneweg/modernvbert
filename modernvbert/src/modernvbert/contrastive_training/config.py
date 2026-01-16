@@ -80,11 +80,15 @@ class ModelArgs:
 
         torch_dtype = getattr(torch, self.loading_kwargs.pop("torch_dtype", "bfloat16"))
         device = self.loading_kwargs.pop("device", "cuda" if torch.cuda.is_available() else "cpu")
-        return model_class.from_pretrained(
+        model = model_class.from_pretrained(
             resume_path or self.model_name_or_path,
             torch_dtype=torch_dtype,
             **self.loading_kwargs
-        ).to(torch_dtype).to(device)
+        )
+        if model.__class__.__name__ == "SparseModernVBertM2SpladeModernBERT":
+            print("Hallootjes dit gaat goed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            model.init_text_encoder()
+        return model.to(torch_dtype).to(device)
 
     def load_processor(self):
         processor_class = getattr(colpali_models, self.processor_type)
@@ -152,7 +156,7 @@ class ColbertTrainingArguments:
         if model.base_model.model.__class__.__name__ == "SparseModernVBertM2SpladeModernBERT":
             print("Loading SPLADE tokenizer for SparseModernVBertM2SpladeModernBERT model...")
             splade_tokenizer = AutoTokenizer.from_pretrained("sparse-encoder/splade-ModernBERT-nq-fresh-lq0.05-lc0.003_scale1_lr-1e-4_bs64")
-            processor.tokenizer = splade_tokenizer 
+            processor.tokenizer = splade_tokenizer
 
         # Resolve the loss func
         loss_fn = getattr(colpali_losses, self.model_args.loss_type)()
