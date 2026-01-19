@@ -12,8 +12,8 @@ from colpali_engine.models import (
 )
 from colpali_engine.models.modernvbert.configuration_modernvbert import ModernVBertConfig
 
-m2_checkpoint_path = Path("/home/scur1709/modernvbert/models/sparsemodernvbertm2_initialization")
-mlm_checkpoint_path = Path("/home/scur1709/modernvbert/models/sparsemodernvbertmlm_initialization")
+m2_checkpoint_path = Path("/home/scur1719/modernvbert/models/sparsemodernvbertm2_initialization")
+mlm_checkpoint_path = Path("/home/scur1719/modernvbert/models/sparsemodernvbertmlm_initialization")
 
 def map_m2_weights(source_sd: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     """Mapping logic for the M2 architecture."""
