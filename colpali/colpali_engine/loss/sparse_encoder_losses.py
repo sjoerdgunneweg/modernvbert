@@ -234,7 +234,7 @@ class SparseM2BiNegativeCELoss(SparseBiEncoderModule):
         self.debug = debug
 
         # Avoid module instances as default args; create them per-loss instance.
-        self.d_regularizer = d_regularizer or FLOPs(weight=0.001, T=10000)
+        self.d_regularizer = d_regularizer or FLOPs(weight=0.05, T=10000)
 
         self.in_batch_loss_fn = BiEncoderLoss(
             temperature=temperature,
