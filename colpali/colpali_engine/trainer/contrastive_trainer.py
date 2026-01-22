@@ -7,6 +7,7 @@ from torch.distributed.nn.functional import all_gather  # PyTorch ≥ 2.1
 from torch.utils.data import ConcatDataset, DataLoader, Dataset
 from transformers import Trainer, is_datasets_available
 from transformers.trainer_utils import seed_worker
+from transformers.trainer import unwrap_model
 
 from colpali_engine.data.sampler import SingleDatasetBatchSampler
 
@@ -185,6 +186,7 @@ class ContrastiveTrainer(Trainer):
         return neg_doc_outputs
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        model = unwrap_model(model) # TODO check if this does not break anything 
         model_class_name = model.base_model.model.__class__.__name__
         print("Worst trainer ever used, model class name:", model_class_name)
         if not ((model_class_name == "SparseModernVBertM2") or (model_class_name == "SparseModernVBertM2SpladeModernBERT")):
