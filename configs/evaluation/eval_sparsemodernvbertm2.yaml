@@ -1,6 +1,6 @@
 eval_config:
-  model_name_or_path: /home/scur1716/modernvbert/models/sparsemodernvbertmlm_final_checkpoint/
-  wrapper_cls: SparseModernVBertMLMWrapper
+  model_name_or_path: /home/scur1716/modernvbert/models/sparsemodernvbertm2_hardnegs_text_300k_from_base2/final
+  wrapper_cls: SparseModernVBertM2Wrapper
   tasks:
   - ViDoRe(v1)
   - ViDoRe(v2)
