@@ -92,9 +92,6 @@ class DecoupledEmbedding(nn.Embedding):
         if self.num_additional_embeddings == 0:
             return super().forward(input_ids)
 
-        print("DEBUG ModernVBERT.forward")
-        print("  input_ids:", input_ids)
-
         input_ids = input_ids.clone()
         additional_vocab_indices = torch.where(input_ids >= self.num_embeddings)
         input_ids_additional_vocab = input_ids[additional_vocab_indices]
