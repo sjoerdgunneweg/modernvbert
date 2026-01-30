@@ -7,8 +7,8 @@ from PIL import Image
 
 from colpali.colpali_engine.models.modernvbert.sparse_mlm.processing_sparsemodernvbert_mlm import SparseModernVBertMLMProcessor
 
-processor = SparseModernVBertMLMProcessor.from_pretrained("/home/scur1716/modernvbert/models/sparsemodernvbertmlm_final_checkpoint")
-model = AutoModel.from_pretrained("/home/scur1716/modernvbert/models/sparsemodernvbertmlm_final_checkpoint")
+processor = SparseModernVBertMLMProcessor.from_pretrained("/home/scur1716/modernvbert/models/sparsemodernvbertmlm_final_checkpoint", trust_remote_code=True)
+model = AutoModel.from_pretrained("/home/scur1716/modernvbert/models/sparsemodernvbertmlm_final_checkpoint", trust_remote_code=True)
 
 images = [Image.open("photo_28.jpg").convert("RGB"),
           Image.open("photo_27.jpg").convert("RGB")]
