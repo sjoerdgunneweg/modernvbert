@@ -43,62 +43,50 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
 
         return neg_doc_outputs
 
-    # def forward(self, *args, **kwargs) -> torch.Tensor:
-    #     # === Extract inputs ===
-    #     query_inputs = {k[len(self.query_prefix):]: v for k, v in kwargs.items() if k.startswith(self.query_prefix)}
-    #     doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in kwargs.items() if k.startswith(self.pos_prefix)}
-
-    #     query_inputs = kwargs # TODO: does this shared input extraction work correctly?
-    #     doc_inputs = kwargs
-
-    #     vision = "pixel_values" in kwargs or "image_hidden_states" in kwargs            
-            
-
-    #     print("model_name", self.__class__.__name__) #TODO remove these when done debugging
-    #     print("kwargs: ", kwargs.items())
-
-    #     # === Hard negatives ===
-    #     neg_doc_inputs = None
-    #     if "neg_doc_input_ids" in kwargs:
-    #         num_negs = kwargs["neg_doc_input_ids"].size(1)
-    #         neg_doc_inputs = self._reshape_neg_doc_inputs(kwargs)
-
-    #     #== Encode query (text) ===
-    #     print("query_inputs:", query_inputs) #TODO remove these when done debugging
-    #     print("doc_inputs:", doc_inputs)
-    #     query_outputs = self.text_encoder(**query_inputs)
-
-    #     print("query_outputs:", query_outputs) #TODO remove these when done debugging
-    #     #=== Encode doc (vision) ===
-    #     doc_outputs = self.vision_encoder(**doc_inputs)
-
-    #     #=== Encode neg docs (vision) ===
-    #     if neg_doc_inputs is not None:
-    #         neg_doc_outputs = self.vision_encoder(**neg_doc_inputs)
-    #         neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
-
-    #     return {
-    #         "q_out": query_outputs,
-    #         "d_out": doc_outputs,
-    #         "neg_d_out": neg_doc_outputs if neg_doc_inputs is not None else None,
-    #     }
-    
     def forward(self, *args, **kwargs) -> torch.Tensor:
         # === Extract inputs ===
-        vision = "pixel_values" in kwargs or "image_hidden_states" in kwargs    
+        query_inputs = {k[len(self.query_prefix):]: v for k, v in kwargs.items() if k.startswith(self.query_prefix)}
+        doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in kwargs.items() if k.startswith(self.pos_prefix)}         
+            
+        # === Hard negatives ===
+        neg_doc_inputs = None
+        if "neg_doc_input_ids" in kwargs:
+            num_negs = kwargs["neg_doc_input_ids"].size(1)
+            neg_doc_inputs = self._reshape_neg_doc_inputs(kwargs)
 
-        if vision:
-            print("Using vision encoder")
-            doc_inputs = kwargs
+        #== Encode query (text) ===
+        query_outputs = self.text_encoder(**query_inputs)
 
-            #=== Encode doc (vision) ===
-            doc_outputs = self.vision_encoder(**doc_inputs)
+        #=== Encode doc (vision) ===
+        doc_outputs = self.vision_encoder(**doc_inputs)
 
-            return doc_outputs
-        else:
-            query_inputs = kwargs 
+        #=== Encode neg docs (vision) ===
+        if neg_doc_inputs is not None:
+            neg_doc_outputs = self.vision_encoder(**neg_doc_inputs)
+            neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
 
-            #== Encode query (text) ===
-            query_outputs = self.text_encoder(**query_inputs)        
+        return {
+            "q_out": query_outputs,
+            "d_out": doc_outputs,
+            "neg_d_out": neg_doc_outputs if neg_doc_inputs is not None else None,
+        }
+    
+    # def forward(self, *args, **kwargs) -> torch.Tensor:
+    #     # === Extract inputs ===
+    #     vision = "pixel_values" in kwargs or "image_hidden_states" in kwargs    
 
-            return query_outputs
+    #     if vision:
+    #         print("Using vision encoder")
+    #         doc_inputs = kwargs
+
+    #         #=== Encode doc (vision) ===
+    #         doc_outputs = self.vision_encoder(**doc_inputs)
+
+    #         return doc_outputs
+    #     else:
+    #         query_inputs = kwargs 
+
+    #         #== Encode query (text) ===
+    #         query_outputs = self.text_encoder(**query_inputs)        
+
+    #         return query_outputs
