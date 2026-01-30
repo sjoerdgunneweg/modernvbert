@@ -45,8 +45,11 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
         # === Extract inputs ===
-        query_inputs = {k[len(self.query_prefix):]: v for k, v in kwargs.items() if k.startswith(self.query_prefix)}
-        doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in kwargs.items() if k.startswith(self.pos_prefix)}
+        # query_inputs = {k[len(self.query_prefix):]: v for k, v in kwargs.items() if k.startswith(self.query_prefix)}
+        # doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in kwargs.items() if k.startswith(self.pos_prefix)}
+
+        query_inputs = kwargs # TODO: does this shared input extraction work correctly?
+        doc_inputs = kwargs
 
         print("model_name", self.__class__.__name__) #TODO remove these when done debugging
         print("kwargs: ", kwargs.items())
