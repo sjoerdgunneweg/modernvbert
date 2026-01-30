@@ -26,7 +26,7 @@ with torch.no_grad():
     doc_embeddings = model(**image_inputs)
 
 print("doc embeddings: ", doc_embeddings)
-print("query_embeddings: \n", query_embeddings)
+print("query_embeddings: ", query_embeddings, "\n")
 
 print("doc embeddings nonzero indices: ", torch.nonzero(doc_embeddings))
 print("query embeddings nonzero indices: ", torch.nonzero(query_embeddings))
