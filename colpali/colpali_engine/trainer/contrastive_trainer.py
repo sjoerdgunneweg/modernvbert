@@ -204,10 +204,16 @@ class ContrastiveTrainer(Trainer):
                 neg_doc_outputs = model(**neg_doc_inputs)
                 neg_doc_outputs = self._reshape_neg_doc_outputs(neg_doc_outputs, num_negs)
         else:
+            print("Using M2 or M2 Splade model compute_loss")
             dict_outputs = model(**inputs)
             query_outputs = dict_outputs["q_out"]
             doc_outputs = dict_outputs["d_out"]
             neg_doc_outputs = dict_outputs["neg_d_out"]
+
+
+            print("query_outputs:", query_outputs) #TODO remove these when done debugging
+            print("doc_outputs:", doc_outputs)
+            print("neg_doc_outputs:", neg_doc_outputs)
 
         # === Main loss: query → doc ===
         loss_out = self._compute_loss_from_outputs(query_outputs, doc_outputs, neg_doc_outputs)
