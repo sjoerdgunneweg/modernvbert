@@ -189,6 +189,7 @@ class ContrastiveTrainer(Trainer):
         model = unwrap_model(model) # TODO check if this does not break anything 
         model_class_name = model.base_model.model.__class__.__name__
         if not ((model_class_name == "SparseModernVBertM2") or (model_class_name == "SparseModernVBertM2SpladeModernBERT")):
+            print("Using MLM model compute_loss")
             # === Extract inputs ===
             query_inputs = {k[len(self.query_prefix):]: v for k, v in inputs.items() if k.startswith(self.query_prefix)}
             doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in inputs.items() if k.startswith(self.pos_prefix)}
