@@ -56,7 +56,7 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
         query_inputs = {k[len(self.query_prefix):]: v for k, v in kwargs.items() if k.startswith(self.query_prefix)}
         doc_inputs   = {k[len(self.pos_prefix):]:   v for k, v in kwargs.items() if k.startswith(self.pos_prefix)}
 
-        print("model_name", self.__class__.__name__)
+        print("model_name", self.__class__.__name__) #TODO remove these when done debugging
         print("kwargs: ", kwargs.items())
 
         # === Hard negatives ===
@@ -66,11 +66,11 @@ class SparseModernVBertM2SpladeModernBERT(ModernVBertPreTrainedModel):
             neg_doc_inputs = self._reshape_neg_doc_inputs(kwargs)
 
         #== Encode query (text) ===
-        print("query_inputs:", query_inputs)
+        print("query_inputs:", query_inputs) #TODO remove these when done debugging
         print("doc_inputs:", doc_inputs)
         query_outputs = self.text_encoder(query_inputs)["token_embeddings"]
 
-        print("query_outputs:", query_outputs)
+        print("query_outputs:", query_outputs) #TODO remove these when done debugging
         #=== Encode doc (vision) ===
         doc_outputs = self.vision_encoder(**doc_inputs)
 
