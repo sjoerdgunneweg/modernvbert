@@ -35,13 +35,25 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
 
         return neg_doc_inputs
 
-    def _reshape_neg_doc_outputs(self, neg_doc_outputs, num_neg_docs):
-        """
-        Helper function to reshape negative doc outputs to (batch_size, num_neg_docs, ...)
-        """
-        neg_doc_outputs = neg_doc_outputs.view(-1, num_neg_docs, *neg_doc_outputs.shape[1:])
+    # def _reshape_neg_doc_outputs(self, neg_doc_outputs, num_neg_docs):
+    #     """
+    #     Helper function to reshape negative doc outputs to (batch_size, num_neg_docs, ...)
+    #     """
+    #     neg_doc_outputs = neg_doc_outputs.view(-1, num_neg_docs, *neg_doc_outputs.shape[1:])
 
-        return neg_doc_outputs
+    #     return neg_doc_outputs
+    
+    def _reshape_neg_doc_inputs(self, inputs):
+        """
+        Helper function to reshape negative doc inputs to (batch_size * num_neg_docs, ...)
+        """
+        neg_doc_inputs = {k[len(self.neg_prefix) :]: v for k, v in inputs.items() if k.startswith(self.neg_prefix)}
+
+        for k in neg_doc_inputs:
+            # go from (batch_size, num_neg_docs, ...) to (batch_size * num_neg_docs, ...)
+            neg_doc_inputs[k] = neg_doc_inputs[k].view(-1, *neg_doc_inputs[k].shape[2:])
+
+        return neg_doc_inputs
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
         # === Extract inputs ===
