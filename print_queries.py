@@ -30,3 +30,10 @@ print("query_embeddings: ", query_embeddings, "\n")
 
 print("doc embeddings nonzero indices: ", torch.nonzero(doc_embeddings))
 print("query embeddings nonzero indices: ", torch.nonzero(query_embeddings))
+
+
+query_tokens = processor.tokenizer.convert_ids_to_tokens(torch.nonzero(query_embeddings).squeeze()[:, -1].cpu().numpy())
+print("tokens with nonzero values in query embedding: ", query_tokens)
+
+doc_tokens = processor.tokenizer.convert_ids_to_tokens(torch.nonzero(doc_embeddings).squeeze()[:, -1].cpu().numpy())
+print("tokens with nonzero values in doc embedding: ", doc_tokens)
