@@ -88,6 +88,7 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
         vision = "pixel_values" in kwargs or "image_hidden_states" in kwargs    
 
         if vision:
+            print("Using vision encoder")
             doc_inputs = kwargs
 
             #=== Encode doc (vision) ===
