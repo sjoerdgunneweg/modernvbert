@@ -55,8 +55,11 @@ class SparseModernVBertM2(ModernVBertPreTrainedModel):
             neg_doc_inputs = self._reshape_neg_doc_inputs(kwargs)
 
         #== Encode query (text) ===
+        print("query_inputs:", query_inputs)
+        print("doc_inputs:", doc_inputs)
         query_outputs = self.text_encoder(**query_inputs)
 
+        print("query_outputs:", query_outputs)
         #=== Encode doc (vision) ===
         doc_outputs = self.vision_encoder(**doc_inputs)
 

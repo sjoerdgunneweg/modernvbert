@@ -1,0 +1,13 @@
+eval_config:
+  model_name_or_path: /home/scur1716/modernvbert/models/sparsemodernvbertm2_hardnegs_text_300k_from_base2/final
+  wrapper_cls: SparseModernVBertM2Wrapper
+  tasks:
+  - ViDoRe(v1)
+  - ViDoRe(v2)
+  batch_size: 32
+  output_folder: results/
+  encode_kwargs: {}
+  framework: ["ColPali"]
+  similarity_fn_name: "max_sim"
+  similarity_fn_name_vidore_v3: "MaxSim"
+  attn_implementation: "flash_attention_2"
