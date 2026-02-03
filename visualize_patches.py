@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 from colpali.colpali_engine.models.modernvbert.sparse_mlm.processing_sparsemodernvbert_mlm import SparseModernVBertMLMProcessor
 from colpali.colpali_engine.models.modernvbert.sparse_mlm.modeling_sparsemodernvbert_mlm import SparseModernVBertMLM
 
-# -----------------------------
-# Load model and processor
-# -----------------------------
 model_path = "/home/scur1716/modernvbert/models/sparsemodernvbertmlm_final_checkpoint"
 
 processor = SparseModernVBertMLMProcessor.from_pretrained(model_path, trust_remote_code=True)
@@ -17,9 +14,6 @@ model = SparseModernVBertMLM.from_pretrained(model_path, trust_remote_code=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
-# -----------------------------
-# Load images and query
-# -----------------------------
 images = [Image.open("photo_28.jpg").convert("RGB"),
           Image.open("photo_27.jpg").convert("RGB")]
 
@@ -32,33 +26,21 @@ image_inputs = processor.process_images(images)
 text_inputs = {k: v.to(device) for k, v in text_inputs.items()}
 image_inputs = {k: v.to(device) for k, v in image_inputs.items()}
 
-# -----------------------------
-# Gradient-based patch importance
-# -----------------------------
-# Enable gradients for pixel_values
 image_inputs['pixel_values'].requires_grad_(True)
 
-# Forward pass to get embeddings
 query_embeddings = model(**text_inputs)          # shape: (1, embedding_dim)
 doc_embeddings = model(**image_inputs)           # shape: (batch, embedding_dim)
 
-# Compute similarity score
 score = torch.cosine_similarity(query_embeddings, doc_embeddings, dim=-1).sum()
-# Backpropagate
 score.backward()
 
-# Gradient w.r.t image pixels
 grads = image_inputs['pixel_values'].grad.detach()  # (batch, 3, H, W)
-# Aggregate over channels (L2 norm)
 grads_norm = grads.norm(dim=1)                      # (batch, H, W)
 
-# Normalize per image
-grads_norm = (grads_norm - grads_norm.min(dim=(1,2), keepdim=True)[0]) / \
-             (grads_norm.max(dim=(1,2), keepdim=True)[0] - grads_norm.min(dim=(1,2), keepdim=True)[0] + 1e-8)
+min_vals = grads_norm.amin(dim=(1, 2), keepdim=True)
+max_vals = grads_norm.amax(dim=(1, 2), keepdim=True)
+grads_norm = (grads_norm - min_vals) / (max_vals - min_vals + 1e-8)
 
-# -----------------------------
-# Visualization
-# -----------------------------
 def visualize_gradient(img_pil, grad_norm, save_path=None):
     img = np.array(img_pil).astype(np.float32) / 255.0
     heatmap = grad_norm.cpu().numpy()
@@ -75,7 +57,6 @@ def visualize_gradient(img_pil, grad_norm, save_path=None):
         plt.savefig(save_path)
     plt.show()
 
-# Visualize each image
 for i, img in enumerate(images):
     visualize_gradient(img, grads_norm[i], save_path=f"grad_heatmap_image_{i}.png")
 
