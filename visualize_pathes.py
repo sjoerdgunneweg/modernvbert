@@ -23,7 +23,14 @@ query = ["Based on the RadQA context, which cervical spine levels show the most 
 text_inputs = processor.process_texts(query).to(device)
 image_inputs = processor.process_images(images).to(device)
 
-outputs = model(**text_inputs, **image_inputs, output_attentions=True)
+# outputs = model(**text_inputs, **image_inputs, output_attentions=True)
+
+outputs = model(
+    input_ids=text_inputs['input_ids'],
+    attention_mask=text_inputs['attention_mask'],
+    pixel_values=image_inputs['pixel_values'],
+    output_attentions=True
+)
 
 
 if hasattr(outputs, "cross_attentions"):
