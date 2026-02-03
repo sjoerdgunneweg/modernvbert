@@ -21,7 +21,7 @@ images = [Image.open("photo_28.jpg").convert("RGB"),
 query = ["Based on the RadQA context, which cervical spine levels show the most severe degenerative changes?"]
 
 text_inputs = processor.process_texts(query).to(device)
-image_inputs = processor.process_images(images, return_tensors=True).to(device)
+image_inputs = processor.process_images(images).to(device)
 
 outputs = model(**text_inputs, **image_inputs, output_attentions=True)
 
@@ -58,3 +58,5 @@ def visualize_attention(img_pil, patch_attn, patch_size=16, save_path=None):
 
 for i, img in enumerate(images):
     visualize_attention(img, attn_weights[i], save_path=f"attention_visualization_image_{i}.png")
+
+# TODO: add cv2 (opencv-python), and matplotlib to requirements.txt
