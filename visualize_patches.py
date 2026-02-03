@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 from colpali.colpali_engine.models.modernvbert.sparse_mlm.processing_sparsemodernvbert_mlm import SparseModernVBertMLMProcessor
 from colpali.colpali_engine.models.modernvbert.sparse_mlm.modeling_sparsemodernvbert_mlm import SparseModernVBertMLM
@@ -42,15 +43,22 @@ max_vals = grads_norm.amax(dim=(1, 2), keepdim=True)
 grads_norm = (grads_norm - min_vals) / (max_vals - min_vals + 1e-8)
 
 def visualize_gradient(img_pil, grad_norm, save_path=None):
-    img = np.array(img_pil).astype(np.float32) / 255.0
-    heatmap = grad_norm.cpu().numpy()
-    heatmap = np.expand_dims(heatmap, axis=-1)      # (H, W, 1)
-    heatmap_color = np.concatenate([heatmap, np.zeros_like(heatmap), 1-heatmap], axis=-1)  # blue-red
+    img = np.array(img_pil).astype(np.float32) / 255.0  # (H_img, W_img, 3)
+    H_img, W_img, _ = img.shape
+
+    if not isinstance(grad_norm, torch.Tensor):
+        grad_norm = torch.tensor(grad_norm)
+
+    grad_norm_resized = F.interpolate(grad_norm.unsqueeze(0).unsqueeze(0), size=(H_img, W_img), mode='bilinear', align_corners=False)
+    grad_norm_resized = grad_norm_resized.squeeze().cpu().numpy()  # (H_img, W_img)
+
+    heatmap_color = np.stack([grad_norm_resized, np.zeros_like(grad_norm_resized), 1-grad_norm_resized], axis=-1)
 
     overlay = 0.6 * img + 0.4 * heatmap_color
     overlay = np.clip(overlay, 0, 1)
 
-    plt.figure(figsize=(8, 8))
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(12, 6))
     plt.imshow(overlay)
     plt.axis('off')
     if save_path:
