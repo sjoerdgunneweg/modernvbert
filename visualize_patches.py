@@ -43,24 +43,37 @@ max_vals = grads_norm.amax(dim=(1, 2), keepdim=True)
 grads_norm = (grads_norm - min_vals) / (max_vals - min_vals + 1e-8)
 
 def visualize_gradient(img_pil, grad_norm, save_path=None):
-    img = np.array(img_pil).astype(np.float32) / 255.0  # (H_img, W_img, 3)
+    img = np.array(img_pil).astype(np.float32) / 255.0
     H_img, W_img, _ = img.shape
 
-    if not isinstance(grad_norm, torch.Tensor):
-        grad_norm = torch.tensor(grad_norm)
+    if grad_norm.dim() == 3:
+        # (3, H, W) -> (H, W)
+        grad_norm = grad_norm.norm(dim=0)
 
-    grad_norm_resized = F.interpolate(grad_norm.unsqueeze(0).unsqueeze(0), size=(H_img, W_img), mode='bilinear', align_corners=False)
-    grad_norm_resized = grad_norm_resized.squeeze().cpu().numpy()  # (H_img, W_img)
+    grad_norm = grad_norm.unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
 
-    heatmap_color = np.stack([grad_norm_resized, np.zeros_like(grad_norm_resized), 1-grad_norm_resized], axis=-1)
+    grad_norm_resized = F.interpolate(
+        grad_norm,
+        size=(H_img, W_img),
+        mode="bilinear",
+        align_corners=False
+    )
+
+    grad_norm_resized = grad_norm_resized.squeeze().cpu().numpy()
+    grad_norm_resized = (grad_norm_resized - grad_norm_resized.min()) / \
+                        (grad_norm_resized.max() - grad_norm_resized.min() + 1e-8)
+
+    heatmap_color = np.stack(
+        [grad_norm_resized, np.zeros_like(grad_norm_resized), 1 - grad_norm_resized],
+        axis=-1
+    )
 
     overlay = 0.6 * img + 0.4 * heatmap_color
     overlay = np.clip(overlay, 0, 1)
 
-    import matplotlib.pyplot as plt
     plt.figure(figsize=(12, 6))
     plt.imshow(overlay)
-    plt.axis('off')
+    plt.axis("off")
     if save_path:
         plt.savefig(save_path)
     plt.show()
