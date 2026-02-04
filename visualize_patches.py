@@ -15,8 +15,10 @@ model = SparseModernVBertMLM.from_pretrained(model_path, trust_remote_code=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
-images = [Image.open("photo_28.jpg").convert("RGB"),
-          Image.open("photo_27.jpg").convert("RGB")]
+# images = [Image.open("photo_28.jpg").convert("RGB"),
+#           Image.open("photo_27.jpg").convert("RGB")]
+
+images = [Image.open("photo_28.jpg").convert("RGB")]
 
 query = ["Based on the RadQA context, which cervical spine levels show the most severe degenerative changes?"]
 
